@@ -1,12 +1,15 @@
 package wtf.kity.minecraftxiv;
 
 
+import baritone.api.BaritoneAPI;
+import baritone.api.Settings;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -22,6 +25,7 @@ import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import wtf.kity.minecraftxiv.config.Config;
+import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.network.Capabilities;
 
 import java.io.IOException;
@@ -37,6 +41,8 @@ public class ClientInit implements ClientModInitializer {
     public static KeyBinding zoomInBinding;
     public static KeyBinding zoomOutBinding;
     public static KeyBinding cycleTargetBinding;
+    public static KeyBinding snapBehindBinding;
+    public static KeyBinding goToPosBinding;
 
     @Nullable
     public static Capabilities capabilities;
@@ -120,6 +126,18 @@ public class ClientInit implements ClientModInitializer {
                 GLFW.GLFW_KEY_TAB,
                 "minecraftxiv.binds.category"
         ));
+        KeyBindingHelper.registerKeyBinding(snapBehindBinding = new KeyBinding(
+                "minecraftxiv.binds.snapBehind",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_GRAVE_ACCENT,
+                "minecraftxiv.binds.category"
+        ));
+        KeyBindingHelper.registerKeyBinding(goToPosBinding = new KeyBinding(
+                "minecraftxiv.binds.goTo",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_GRAVE_ACCENT,
+                "minecraftxiv.binds.category"
+        ));
 
         listenCapabilities(capabilities -> {
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
@@ -133,6 +151,20 @@ public class ClientInit implements ClientModInitializer {
                         .formatted(capabilities.unlimitedReach() ? Formatting.GREEN : Formatting.RED), false);
             }
         });
+
+        Settings settings = BaritoneAPI.getSettings();
+        settings.renderGoal.value = true;
+        settings.renderPath.value = false;
+        settings.allowBreak.value = false;
+        settings.antiCheatCompatibility.value = true;
+        settings.allowSprint.value = true;
+        settings.allowParkour.value = true;
+        settings.allowParkourAscend.value = true;
+        settings.allowDownward.value = true;
+        settings.chatControl.value = false;
+        settings.freeLook.value = false;
+
+        WorldRenderEvents.LAST.register(Mod::renderOverlays);
 
         // Client side stuff
 

@@ -24,6 +24,9 @@ public class Config {
     public boolean lockOnTargeting = false;
 
     @SerialEntry
+    public boolean lockOnPlayerRelative = true;
+
+    @SerialEntry
     public boolean targetFromCamera = false;
 
     @SerialEntry

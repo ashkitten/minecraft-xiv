@@ -85,6 +85,18 @@ public class Gui implements ModMenuApi {
                                             )
                                             .controller(BooleanControllerBuilder::create)
                                             .build())
+                                    .option(Option
+                                            .<Boolean>createBuilder()
+                                            .name(Text.translatable("minecraftxiv.config.lockOnPlayerRelative.name"))
+                                            .description(OptionDescription.of(Text.translatable(
+                                                    "minecraftxiv.config.lockOnPlayerRelative.description")))
+                                            .binding(
+                                                    defaults.lockOnPlayerRelative,
+                                                    () -> config.lockOnPlayerRelative,
+                                                    (value) -> config.lockOnPlayerRelative = value
+                                            )
+                                            .controller(BooleanControllerBuilder::create)
+                                            .build())
                                     .build())
                             .category(ConfigCategory
                                     .createBuilder()

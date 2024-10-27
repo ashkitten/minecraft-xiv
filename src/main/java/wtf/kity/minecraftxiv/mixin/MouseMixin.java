@@ -1,8 +1,10 @@
 package wtf.kity.minecraftxiv.mixin;
 
+import baritone.api.pathing.goals.GoalNear;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.input.Scroller;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
@@ -13,7 +15,9 @@ import net.minecraft.command.argument.EntityAnchorArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +31,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.config.Config;
+import wtf.kity.minecraftxiv.mod.DestroyBlockGoal;
 import wtf.kity.minecraftxiv.mod.Mod;
 
 @Mixin(Mouse.class)
@@ -140,8 +145,10 @@ public class MouseMixin {
                     Mod.pitch = pitch;
                 }
 
-                this.client.player.setYaw(Mod.yaw);
-                this.client.player.setPitch(Mod.pitch);
+                if (Mod.goals.isEmpty()) {
+                    this.client.player.setYaw(Mod.yaw);
+                    this.client.player.setPitch(Mod.pitch);
+                }
 
                 Mod.crosshairTarget = null;
             } else {
@@ -196,8 +203,33 @@ public class MouseMixin {
                             cameraEntity
                     ));
                 }
+
                 Mod.crosshairTarget = hitResult;
-                client.player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, hitResult.getPos());
+
+                if (ClientInit.goToPosBinding.wasPressed()) {
+                    if (Screen.hasControlDown()) {
+                        // Step forward a tiny amount so we ensure we're inside the block
+                        BlockPos pos = BlockPos.ofFloored(hitResult.getPos().add(rayDir.multiply(0.0001)));
+                        Mod.goals.addLast(new DestroyBlockGoal(pos, 3));
+                    } else {
+                        // Step back a tiny amount so we can get the block that was passed through to get to the
+                        // intersection
+                        BlockPos pos = BlockPos.ofFloored(hitResult.getPos().subtract(rayDir.multiply(0.0001)));
+                        while (!cameraEntity.getWorld()
+                                .getBlockState(pos.down())
+                                .isSolidSurface(cameraEntity.getWorld(), pos.down(), client.player, Direction.UP)) {
+                            if (cameraEntity.getWorld().isOutOfHeightLimit(pos)) {
+                                break;
+                            }
+                            pos = pos.down();
+                        }
+                        if (!cameraEntity.getWorld().isOutOfHeightLimit(pos)) {
+                            Mod.goals.addLast(new GoalNear(pos, 0));
+                        }
+                    }
+                } else if (Mod.goals.isEmpty()) {
+                    client.player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, hitResult.getPos());
+                }
             }
         }
     }

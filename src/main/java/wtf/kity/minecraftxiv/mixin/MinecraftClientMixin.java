@@ -1,10 +1,15 @@
 package wtf.kity.minecraftxiv.mixin;
 
+import baritone.api.BaritoneAPI;
+import baritone.api.IBaritone;
+import baritone.api.pathing.goals.GoalNear;
+import baritone.api.utils.input.Input;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.Perspective;
+import net.minecraft.command.argument.EntityAnchorArgumentType;
 import net.minecraft.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -15,8 +20,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import wtf.kity.minecraftxiv.ClientInit;
+import wtf.kity.minecraftxiv.mod.DestroyBlockGoal;
 import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
+
+import java.awt.*;
 
 @Mixin(MinecraftClient.class)
 public abstract class MinecraftClientMixin {
@@ -35,8 +43,6 @@ public abstract class MinecraftClientMixin {
         }
         // For some reason, KeyBinding#wasPressed doesn't work here, so I'm using KeyBinding#isPressed, which doesn't
         // seem to break anything.
-        //if (ClientInit.getInstance().getKeyBinding().wasPressed() || (this.options.togglePerspectiveKey.wasPressed
-        // () && mod.isEnabled())) {
         if (ClientInit.toggleBinding.wasPressed() || (
                 this.options.togglePerspectiveKey.isPressed() && Mod.enabled
         )) {
@@ -75,6 +81,37 @@ public abstract class MinecraftClientMixin {
 
         if (Mod.lockOnTarget != null && !Mod.lockOnTarget.isAlive()) {
             Mod.lockOnTarget = null;
+        }
+
+        if (ClientInit.snapBehindBinding.wasPressed()) {
+            if (Mod.enabled) {
+                Mod.yaw = player.getYaw();
+            }
+        }
+
+        IBaritone baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+        if (!Mod.goals.isEmpty()) {
+            baritone
+                    .getCustomGoalProcess()
+                    .setGoalAndPath(Mod.goals.peekFirst());
+            if (Mod.goals.peekFirst() instanceof DestroyBlockGoal destroyBlock) {
+                BaritoneAPI.getSettings().colorGoalBox.value = Color.RED;
+                if (destroyBlock.isInGoal(player.getBlockPos())) {
+                    player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, destroyBlock.getGoalPos().toCenterPos());
+                    if (player.getWorld().getBlockState(destroyBlock.getGoalPos()).isAir()) {
+                        Mod.goals.removeFirst();
+                    } else if (baritone.getPlayerContext().isLookingAt(destroyBlock.getGoalPos())) {
+                        baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
+                    }
+                }
+            } else if (Mod.goals.peekFirst() instanceof GoalNear near) {
+                BaritoneAPI.getSettings().colorGoalBox.value = Color.GREEN;
+                if (near.isInGoal(player.getBlockPos())) {
+                    Mod.goals.removeFirst();
+                }
+            }
+        } else {
+            baritone.getCustomGoalProcess().setGoal(null);
         }
     }
 

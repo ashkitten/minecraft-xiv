@@ -5,6 +5,7 @@
   "minecraftxiv.binds.zoomIn": "Zoom in",
   "minecraftxiv.binds.zoomOut": "Zoom out",
   "minecraftxiv.binds.cycleTarget": "Cycle target",
+  "minecraftxiv.binds.snapBehind": "Snap camera behind player",
   "minecraftxiv.config.title": "Minecraft XIV",
   "minecraftxiv.config.category.options": "Options",
   "minecraftxiv.config.scrollWheelZoom.name": "Scroll wheel zoom",
@@ -22,5 +23,7 @@
   "minecraftxiv.config.targetFromCamera.name": "Direct targeting",
   "minecraftxiv.config.targetFromCamera.description": "Pick target from cursor position, bypassing player line of sight.",
   "minecraftxiv.config.unlimitedReach.name": "Unlimited reach",
-  "minecraftxiv.config.unlimitedReach.description": "Allow interaction with blocks no matter how far from the player they are."
+  "minecraftxiv.config.unlimitedReach.description": "Allow interaction with blocks no matter how far from the player they are.",
+  "minecraftxiv.config.lockOnPlayerRelative.name": "Player-relative movement when locked on",
+  "minecraftxiv.config.lockOnPlayerRelative.description": "Use player-relative movement when locked onto a target, even when camera-relative movement is enabled."
 }

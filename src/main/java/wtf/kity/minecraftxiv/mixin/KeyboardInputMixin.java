@@ -14,11 +14,10 @@ import wtf.kity.minecraftxiv.mod.Mod;
 
 @Mixin(KeyboardInput.class)
 public abstract class KeyboardInputMixin extends Input {
-    @Inject(
-            method = "tick", at = @At("TAIL")
-    )
+    @Inject(method = "tick", at = @At("TAIL"))
     private void movement(boolean slowDown, float slowDownFactor, CallbackInfo ci) {
-        if (Mod.enabled && Config.GSON.instance().movementCameraRelative) {
+        if (Mod.enabled && Config.GSON.instance().movementCameraRelative
+                && !(Config.GSON.instance().lockOnPlayerRelative && Mod.lockOnTarget != null)) {
             MinecraftClient client = MinecraftClient.getInstance();
             assert client.player != null;
             Vector2f movement = new Vector2f(this.movementForward, this.movementSideways);
