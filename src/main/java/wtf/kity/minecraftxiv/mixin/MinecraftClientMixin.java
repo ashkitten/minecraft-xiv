@@ -2,6 +2,7 @@ package wtf.kity.minecraftxiv.mixin;
 
 import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
+import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalNear;
 import baritone.api.utils.input.Input;
 import net.minecraft.client.MinecraftClient;
@@ -11,6 +12,8 @@ import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.command.argument.EntityAnchorArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,10 +24,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.mod.DestroyBlockGoal;
+import wtf.kity.minecraftxiv.mod.DestroyBlocksGoal;
 import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.Comparator;
 
 @Mixin(MinecraftClient.class)
 public abstract class MinecraftClientMixin {
@@ -101,6 +107,45 @@ public abstract class MinecraftClientMixin {
                     if (player.getWorld().getBlockState(destroyBlock.getGoalPos()).isAir()) {
                         Mod.goals.removeFirst();
                     } else if (baritone.getPlayerContext().isLookingAt(destroyBlock.getGoalPos())) {
+                        baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
+                    }
+                }
+            } else if (Mod.goals.peekFirst() instanceof DestroyBlocksGoal destroyBlocks) {
+                BaritoneAPI.getSettings().colorGoalBox.value = Color.RED;
+                destroyBlocks = new DestroyBlocksGoal(Arrays
+                        .stream(destroyBlocks.goals())
+                        .filter(goal -> !player
+                                .getWorld()
+                                .getBlockState(((DestroyBlockGoal) goal).getGoalPos())
+                                .isAir())
+                        .toArray(Goal[]::new));
+                Mod.goals.removeFirst();
+                if (destroyBlocks.goals().length > 0) {
+                    Mod.goals.addFirst(destroyBlocks);
+                    if (destroyBlocks.isInGoal(player.getBlockPos())) {
+                        Arrays.stream(destroyBlocks.goals())
+                                .map(goal -> {
+                                    assert goal instanceof DestroyBlockGoal;
+                                    return ((DestroyBlockGoal) goal).getGoalPos();
+                                })
+                                .filter(pos -> {
+                                    BlockHitResult hitResult = player.getWorld().raycast(new RaycastContext(
+                                            player.getPos(),
+                                            pos.toCenterPos(),
+                                            RaycastContext.ShapeType.OUTLINE,
+                                            RaycastContext.FluidHandling.NONE,
+                                            player
+                                    ));
+                                    return player.getEyePos().distanceTo(hitResult.getPos()) < 5.0
+                                            && hitResult.getBlockPos().equals(pos);
+                                })
+                                .min(Comparator.comparingDouble(pos -> player
+                                        .getPos()
+                                        .distanceTo(pos.toCenterPos())))
+                                .ifPresent(blockPos -> player.lookAt(
+                                        EntityAnchorArgumentType.EntityAnchor.EYES,
+                                        blockPos.toCenterPos()
+                                ));
                         baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
                     }
                 }

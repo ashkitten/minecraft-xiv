@@ -47,6 +47,14 @@ public class Mod {
                 BlockPos pos = destroyBlock.getGoalPos();
                 BlockState state = world.getBlockState(pos);
                 drawBox(context, buffer, pos, cameraX, cameraY, cameraZ, Color.RED, state, world);
+            } else if (goal instanceof DestroyBlocksGoal destroyBlocks) {
+                for (Goal sub : destroyBlocks.goals()) {
+                    if (sub instanceof DestroyBlockGoal destroyBlock) {
+                        BlockPos pos = destroyBlock.getGoalPos();
+                        BlockState state = world.getBlockState(pos);
+                        drawBox(context, buffer, pos, cameraX, cameraY, cameraZ, Color.RED, state, world);
+                    }
+                }
             } else if (goal instanceof GoalNear near) {
                 BlockPos pos = near.getGoalPos();
                 BlockState state = world.getBlockState(pos);

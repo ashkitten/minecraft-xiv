@@ -1,7 +1,9 @@
 package wtf.kity.minecraftxiv.mixin;
 
+import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalNear;
 import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.client.gui.screen.Screen;
@@ -32,7 +34,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.DestroyBlockGoal;
+import wtf.kity.minecraftxiv.mod.DestroyBlocksGoal;
 import wtf.kity.minecraftxiv.mod.Mod;
+
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Mixin(Mouse.class)
 public class MouseMixin {
@@ -210,7 +218,39 @@ public class MouseMixin {
                     if (Screen.hasControlDown()) {
                         // Step forward a tiny amount so we ensure we're inside the block
                         BlockPos pos = BlockPos.ofFloored(hitResult.getPos().add(rayDir.multiply(0.0001)));
-                        Mod.goals.addLast(new DestroyBlockGoal(pos, 3));
+                        BlockState state = cameraEntity.getWorld().getBlockState(pos);
+                        if (Screen.hasAltDown()) {
+                            Set<BlockPos> connected = new HashSet<>();
+                            Set<BlockPos> new1 = new HashSet<>();
+                            new1.add(pos);
+                            do {
+                                Set<BlockPos> new2 = new HashSet<>();
+                                for (BlockPos p : new1) {
+                                    connected.add(p);
+
+                                    new2.add(p.up());
+                                    new2.add(p.down());
+                                    new2.add(p.north());
+                                    new2.add(p.south());
+                                    new2.add(p.east());
+                                    new2.add(p.west());
+                                }
+                                new1 = new2
+                                        .stream()
+                                        .filter(p2 -> !connected.contains(p2) &&
+                                                state.equals(cameraEntity.getWorld().getBlockState(p2)))
+                                        .collect(Collectors.toSet());
+                            } while (!new1.isEmpty());
+                            Mod.goals.addLast(new DestroyBlocksGoal(connected
+                                    .stream()
+                                    .sorted(Comparator.comparingDouble(p -> pos
+                                            .toCenterPos()
+                                            .distanceTo(p.toCenterPos())))
+                                    .map(p -> new DestroyBlockGoal(p, 5))
+                                    .toArray(Goal[]::new)));
+                        } else {
+                            Mod.goals.addLast(new DestroyBlockGoal(pos, 5));
+                        }
                     } else {
                         // Step back a tiny amount so we can get the block that was passed through to get to the
                         // intersection
