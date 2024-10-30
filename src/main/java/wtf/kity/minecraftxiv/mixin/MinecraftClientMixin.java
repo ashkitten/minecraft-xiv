@@ -2,7 +2,6 @@ package wtf.kity.minecraftxiv.mixin;
 
 import baritone.api.BaritoneAPI;
 import baritone.api.IBaritone;
-import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalNear;
 import baritone.api.utils.input.Input;
 import net.minecraft.client.MinecraftClient;
@@ -23,13 +22,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import wtf.kity.minecraftxiv.ClientInit;
-import wtf.kity.minecraftxiv.mod.DestroyBlockGoal;
 import wtf.kity.minecraftxiv.mod.DestroyBlocksGoal;
 import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
 
 import java.awt.*;
-import java.util.Arrays;
 import java.util.Comparator;
 
 @Mixin(MinecraftClient.class)
@@ -100,34 +97,21 @@ public abstract class MinecraftClientMixin {
             baritone
                     .getCustomGoalProcess()
                     .setGoalAndPath(Mod.goals.peekFirst());
-            if (Mod.goals.peekFirst() instanceof DestroyBlockGoal destroyBlock) {
+            if (Mod.goals.peekFirst() instanceof DestroyBlocksGoal destroyBlocks) {
                 BaritoneAPI.getSettings().colorGoalBox.value = Color.RED;
-                if (destroyBlock.isInGoal(player.getBlockPos())) {
-                    player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, destroyBlock.getGoalPos().toCenterPos());
-                    if (player.getWorld().getBlockState(destroyBlock.getGoalPos()).isAir()) {
-                        Mod.goals.removeFirst();
-                    } else if (baritone.getPlayerContext().isLookingAt(destroyBlock.getGoalPos())) {
-                        baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
-                    }
-                }
-            } else if (Mod.goals.peekFirst() instanceof DestroyBlocksGoal destroyBlocks) {
-                BaritoneAPI.getSettings().colorGoalBox.value = Color.RED;
-                destroyBlocks = new DestroyBlocksGoal(Arrays
-                        .stream(destroyBlocks.goals())
-                        .filter(goal -> !player
+                destroyBlocks.blocks = destroyBlocks.blocks
+                        .stream()
+                        .filter(block -> !player
                                 .getWorld()
-                                .getBlockState(((DestroyBlockGoal) goal).getGoalPos())
+                                .getBlockState(block)
                                 .isAir())
-                        .toArray(Goal[]::new));
-                Mod.goals.removeFirst();
-                if (destroyBlocks.goals().length > 0) {
-                    Mod.goals.addFirst(destroyBlocks);
+                        .toList();
+                if (destroyBlocks.blocks.isEmpty()) {
+                    Mod.goals.removeFirst();
+                } else {
                     if (destroyBlocks.isInGoal(player.getBlockPos())) {
-                        Arrays.stream(destroyBlocks.goals())
-                                .map(goal -> {
-                                    assert goal instanceof DestroyBlockGoal;
-                                    return ((DestroyBlockGoal) goal).getGoalPos();
-                                })
+                        destroyBlocks.blocks
+                                .stream()
                                 .filter(pos -> {
                                     BlockHitResult hitResult = player.getWorld().raycast(new RaycastContext(
                                             player.getPos(),
@@ -136,7 +120,8 @@ public abstract class MinecraftClientMixin {
                                             RaycastContext.FluidHandling.NONE,
                                             player
                                     ));
-                                    return player.getEyePos().distanceTo(hitResult.getPos()) < 5.0
+                                    return player.getEyePos().distanceTo(hitResult.getPos())
+                                            < player.getBlockInteractionRange()
                                             && hitResult.getBlockPos().equals(pos);
                                 })
                                 .min(Comparator.comparingDouble(pos -> player
