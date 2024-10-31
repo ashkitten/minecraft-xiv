@@ -6,6 +6,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
@@ -25,7 +26,17 @@ public class DestroyBlocksGoal implements Goal {
         PlayerEntity player = client.player;
         assert client.world != null && player != null;
 
-        Vec3d eyePos = new BlockPos(x, y, z).toBottomCenterPos().add(0, player.getStandingEyeHeight(), 0);
+        BlockPos blockPos = new BlockPos(x, y, z);
+        Vec3d eyePos;
+        if (blockPos.equals(player.getBlockPos()) && player.isOnGround()) {
+            eyePos = player.getEyePos();
+        } else {
+            eyePos = blockPos.toBottomCenterPos().add(0, player.getStandingEyeHeight(), 0);
+        }
+
+        if (!client.world.isDirectionSolid(blockPos.down(), player, Direction.UP)) {
+            return false;
+        }
 
         return blocks
                 .stream()
@@ -50,7 +61,16 @@ public class DestroyBlocksGoal implements Goal {
         assert client.world != null && player != null;
 
         BlockPos blockPos = new BlockPos(x, y, z);
-        Vec3d eyePos = blockPos.toBottomCenterPos().add(0, player.getStandingEyeHeight(), 0);
+        Vec3d eyePos;
+        if (blockPos.equals(player.getBlockPos()) && player.isOnGround()) {
+            eyePos = player.getEyePos();
+        } else {
+            eyePos = blockPos.toBottomCenterPos().add(0, player.getStandingEyeHeight(), 0);
+        }
+
+        if (!client.world.isDirectionSolid(blockPos.down(), player, Direction.UP)) {
+            return Integer.MAX_VALUE;
+        }
 
         return blocks
                 .stream()

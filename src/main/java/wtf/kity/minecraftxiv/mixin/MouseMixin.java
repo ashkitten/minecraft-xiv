@@ -49,7 +49,6 @@ public class MouseMixin {
     @Shadow
     @Final
     private MinecraftClient client;
-    @SuppressWarnings("unused")
     @Shadow
     private boolean hasResolutionChanged;
     @Shadow
@@ -216,7 +215,6 @@ public class MouseMixin {
 
                 if (ClientInit.goToPosBinding.wasPressed() && hitResult instanceof BlockHitResult blockHitResult) {
                     if (Screen.hasControlDown()) {
-                        // Step forward a tiny amount so we ensure we're inside the block
                         BlockState state = cameraEntity.getWorld().getBlockState(blockHitResult.getBlockPos());
                         if (Screen.hasAltDown()) {
                             Set<BlockPos> connected = new HashSet<>();

@@ -109,30 +109,30 @@ public abstract class MinecraftClientMixin {
                 if (destroyBlocks.blocks.isEmpty()) {
                     Mod.goals.removeFirst();
                 } else {
-                    if (destroyBlocks.isInGoal(player.getBlockPos())) {
-                        destroyBlocks.blocks
-                                .stream()
-                                .filter(pos -> {
-                                    BlockHitResult hitResult = player.getWorld().raycast(new RaycastContext(
-                                            player.getPos(),
-                                            pos.toCenterPos(),
-                                            RaycastContext.ShapeType.OUTLINE,
-                                            RaycastContext.FluidHandling.NONE,
-                                            player
-                                    ));
-                                    return player.getEyePos().distanceTo(hitResult.getPos())
-                                            < player.getBlockInteractionRange()
-                                            && hitResult.getBlockPos().equals(pos);
-                                })
-                                .min(Comparator.comparingDouble(pos -> player
-                                        .getPos()
-                                        .distanceTo(pos.toCenterPos())))
-                                .ifPresent(blockPos -> player.lookAt(
-                                        EntityAnchorArgumentType.EntityAnchor.EYES,
-                                        blockPos.toCenterPos()
+                    destroyBlocks.blocks
+                            .stream()
+                            .filter(pos -> {
+                                BlockHitResult hitResult = player.getWorld().raycast(new RaycastContext(
+                                        player.getEyePos(),
+                                        pos.toCenterPos(),
+                                        RaycastContext.ShapeType.OUTLINE,
+                                        RaycastContext.FluidHandling.NONE,
+                                        player
                                 ));
-                        baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
-                    }
+                                return player.getEyePos().distanceTo(hitResult.getPos())
+                                        < player.getBlockInteractionRange()
+                                        && hitResult.getBlockPos().equals(pos);
+                            })
+                            .min(Comparator.comparingDouble(pos -> player
+                                    .getEyePos()
+                                    .distanceTo(pos.toCenterPos())))
+                            .ifPresent(pos -> {
+                                player.lookAt(
+                                        EntityAnchorArgumentType.EntityAnchor.EYES,
+                                        pos.toCenterPos()
+                                );
+                                baritone.getInputOverrideHandler().setInputForceState(Input.CLICK_LEFT, true);
+                            });
                 }
             } else if (Mod.goals.peekFirst() instanceof GoalNear near) {
                 BaritoneAPI.getSettings().colorGoalBox.value = Color.GREEN;

@@ -5,6 +5,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 import wtf.kity.minecraftxiv.mod.Mod;
 
@@ -20,6 +21,9 @@ public abstract class CameraMixin {
     @Shadow
     protected abstract void setRotation(float yaw, float pitch);
 
+    @Shadow
+    protected abstract float clipToSpace(float f);
+
     @ModifyArgs(
             method = "update",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;setRotation(FF)V", ordinal = 0)
@@ -30,14 +34,16 @@ public abstract class CameraMixin {
         }
     }
 
-    @ModifyArgs(
+    @Redirect(
             method = "update",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;clipToSpace(F)F", ordinal = 0)
     )
-    public void b(Args args) {
+    public float b(Camera instance, float f) {
         if (Mod.enabled) {
             this.setRotation(Mod.yaw, Mod.pitch);
-            args.set(0, (float) args.get(0) * Mod.zoom);
+            return this.clipToSpace(f * Mod.zoom);
+        } else {
+            return this.clipToSpace(f);
         }
     }
 }
