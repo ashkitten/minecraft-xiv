@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
@@ -34,9 +33,10 @@ public class DestroyBlocksGoal implements Goal {
             eyePos = blockPos.toBottomCenterPos().add(0, player.getStandingEyeHeight(), 0);
         }
 
-        if (!client.world.isDirectionSolid(blockPos.down(), player, Direction.UP)) {
-            return false;
-        }
+//        if (!client.world.isAir(blockPos.down())
+//                && !client.world.isDirectionSolid(blockPos.down(), player, Direction.UP)) {
+//            return false;
+//        }
 
         return blocks
                 .stream()
@@ -68,9 +68,10 @@ public class DestroyBlocksGoal implements Goal {
             eyePos = blockPos.toBottomCenterPos().add(0, player.getStandingEyeHeight(), 0);
         }
 
-        if (!client.world.isDirectionSolid(blockPos.down(), player, Direction.UP)) {
-            return Integer.MAX_VALUE;
-        }
+//        if (!client.world.isAir(blockPos.down())
+//                && !client.world.isDirectionSolid(blockPos.down(), player, Direction.UP)) {
+//            return Integer.MAX_VALUE;
+//        }
 
         return blocks
                 .stream()

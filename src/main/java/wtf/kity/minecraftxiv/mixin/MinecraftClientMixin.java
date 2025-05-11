@@ -101,14 +101,11 @@ public abstract class MinecraftClientMixin {
                 BaritoneAPI.getSettings().colorGoalBox.value = Color.RED;
                 destroyBlocks.blocks = destroyBlocks.blocks
                         .stream()
-                        .filter(block -> !player
-                                .getWorld()
-                                .getBlockState(block)
-                                .isAir())
+                        .filter(block -> !player.getWorld().isAir(block))
                         .toList();
                 if (destroyBlocks.blocks.isEmpty()) {
                     Mod.goals.removeFirst();
-                } else {
+                } else if (player.isOnGround()) {
                     destroyBlocks.blocks
                             .stream()
                             .filter(pos -> {
