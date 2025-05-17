@@ -117,7 +117,7 @@ public class MouseMixin {
         Window window = client.getWindow();
         Mouse mouse = client.mouse;
         Camera camera = renderer.getCamera();
-        float tickDelta = camera.getLastTickDelta();
+        float tickDelta = camera.getLastTickProgress();
         Entity cameraEntity = client.cameraEntity;
 
         if (Mod.enabled && cameraEntity != null && client.player != null) {

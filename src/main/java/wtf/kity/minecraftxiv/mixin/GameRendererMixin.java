@@ -20,7 +20,7 @@ public abstract class GameRendererMixin {
             Entity camera,
             double blockInteractionRange,
             double entityInteractionRange,
-            float tickDelta,
+            float tickProgress,
             CallbackInfoReturnable<HitResult> cir
     ) {
         if (Config.GSON.instance().lockOnTargeting && Mod.lockOnTarget != null) {
@@ -31,7 +31,7 @@ public abstract class GameRendererMixin {
             if (!Config.GSON.instance().unlimitedReach) {
                 target = ((GameRendererAccessor) MinecraftClient.getInstance().gameRenderer).callEnsureTargetInRange(
                         target,
-                        camera.getCameraPosVec(tickDelta),
+                        camera.getCameraPosVec(tickProgress),
                         blockInteractionRange
                 );
             }

@@ -16,9 +16,9 @@ import java.io.IOException;
 public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements CustomPayload {
     public static final Id<Capabilities> ID = new Id<>(Identifier.of("minecraftxiv", "capabilities"));
     public static final PacketCodec<RegistryByteBuf, Capabilities> CODEC = PacketCodec.tuple(
-            PacketCodecs.BOOL,
+            PacketCodecs.BOOLEAN,
             Capabilities::targetFromCamera,
-            PacketCodecs.BOOL,
+            PacketCodecs.BOOLEAN,
             Capabilities::unlimitedReach,
             Capabilities::new
     );
