@@ -37,9 +37,7 @@ public abstract class MinecraftClientMixin {
         // seem to break anything.
         //if (ClientInit.getInstance().getKeyBinding().wasPressed() || (this.options.togglePerspectiveKey.wasPressed
         // () && mod.isEnabled())) {
-        if (ClientInit.toggleBinding.wasPressed() || (
-                this.options.togglePerspectiveKey.isPressed() && Mod.enabled
-        )) {
+        if (ClientInit.toggleBinding.wasPressed() || this.options.togglePerspectiveKey.isPressed() && Mod.enabled) {
             if (Mod.enabled) {
                 options.setPerspective(Mod.lastPerspective);
                 Util.debug("Disabled Minecraft XIV");
@@ -61,14 +59,12 @@ public abstract class MinecraftClientMixin {
             MinecraftClient.getInstance().mouse.lockCursor();
         }
 
-        if (ClientInit.zoomInBinding.wasPressed()) {
-            if (Mod.enabled) {
+        if (Mod.enabled) {
+            if (ClientInit.zoomInBinding.wasPressed()) {
                 Mod.zoom = Math.max(Mod.zoom - 0.1f, 0.0f);
             }
-        }
 
-        if (ClientInit.zoomOutBinding.wasPressed()) {
-            if (Mod.enabled) {
+            if (ClientInit.zoomOutBinding.wasPressed()) {
                 Mod.zoom = Math.min(Mod.zoom + 0.1f, 2.0f);
             }
         }

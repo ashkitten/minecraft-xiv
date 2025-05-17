@@ -23,9 +23,8 @@ public class InGameHudMixin {
     private MinecraftClient client;
 
     @Redirect(
-            method = "renderCrosshair", at = @At(
-            value = "INVOKE", target = "Lnet/minecraft/client/option/Perspective;isFirstPerson()Z"
-    )
+            method = "renderCrosshair",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/option/Perspective;isFirstPerson()Z")
     )
     private boolean isFirstPerson(Perspective perspective) {
         if (perspective.isFirstPerson()) {
@@ -37,9 +36,7 @@ public class InGameHudMixin {
         return !ClientInit.moveCameraBinding.isPressed();
     }
 
-    @Inject(
-            method = "renderCrosshair", at = @At("HEAD")
-    )
+    @Inject(method = "renderCrosshair", at = @At("HEAD"))
     private void crosshairPre(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (Mod.enabled) {
             double scaleFactor = client.getWindow().getScaleFactor();
@@ -56,9 +53,7 @@ public class InGameHudMixin {
         }
     }
 
-    @Inject(
-            method = "renderCrosshair", at = @At("RETURN")
-    )
+    @Inject(method = "renderCrosshair", at = @At("RETURN"))
     private void crosshairPost(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (Mod.enabled) {
             context.getMatrices().pop();

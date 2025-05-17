@@ -203,12 +203,9 @@ public class MouseMixin {
     }
 
     @Inject(
-            method = { "updateMouse" }, at = {
-            @At(
-                    value = "INVOKE",
-                    target = "net/minecraft/client/network/ClientPlayerEntity.changeLookDirection(DD)V"
-            )
-    }, cancellable = true
+            method = "updateMouse",
+            at = @At(value = "INVOKE", target = "net/minecraft/client/network/ClientPlayerEntity.changeLookDirection(DD)V"),
+            cancellable = true
     )
     private void updateMouseB(CallbackInfo info) {
         if (Mod.enabled) {

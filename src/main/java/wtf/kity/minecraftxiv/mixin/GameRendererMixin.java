@@ -23,13 +23,14 @@ public abstract class GameRendererMixin {
             float tickProgress,
             CallbackInfoReturnable<HitResult> cir
     ) {
+        MinecraftClient client = MinecraftClient.getInstance();
         if (Config.GSON.instance().lockOnTargeting && Mod.lockOnTarget != null) {
             camera.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, Mod.lockOnTarget.getEyePos());
         } else if (Config.GSON.instance().targetFromCamera && ClientInit.getCapabilities().targetFromCamera()) {
             HitResult target = Mod.crosshairTarget;
             if (target == null) return;
             if (!Config.GSON.instance().unlimitedReach) {
-                target = ((GameRendererAccessor) MinecraftClient.getInstance().gameRenderer).callEnsureTargetInRange(
+                target = ((GameRendererAccessor) client.gameRenderer).callEnsureTargetInRange(
                         target,
                         camera.getCameraPosVec(tickProgress),
                         blockInteractionRange
