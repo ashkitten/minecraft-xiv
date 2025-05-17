@@ -123,11 +123,11 @@ public class MouseMixin {
         if (Mod.enabled && cameraEntity != null && client.player != null) {
             if (ClientInit.moveCameraBinding.isPressed()) {
                 if (lastX == null || lastY == null) {
-                    InputUtil.setCursorParameters(client.getWindow().getHandle(), InputUtil.GLFW_CURSOR_DISABLED,
-                            window.getFramebufferWidth() / 2.0, window.getFramebufferHeight() / 2.0
-                    );
                     lastX = x;
                     lastY = y;
+                    x = window.getFramebufferWidth() / 2.0;
+                    y = window.getFramebufferHeight() / 2.0;
+                    InputUtil.setCursorParameters(window.getHandle(), InputUtil.GLFW_CURSOR_DISABLED, x, y);
                 }
                 float yaw1 = (float) (Mod.yaw + i / 8.0D);
                 float pitch1 = (float) (Mod.pitch + j * k / 8.0D);
