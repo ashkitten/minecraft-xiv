@@ -17,8 +17,9 @@ public class Config {
     @SerialEntry
     public boolean scrollWheelZoom = true;
 
+    public enum RelativeMovement { ALWAYS, NEVER, EXCEPT_MOVE_MODE }
     @SerialEntry
-    public boolean movementCameraRelative = true;
+    public RelativeMovement movementCameraRelative = RelativeMovement.EXCEPT_MOVE_MODE;
 
     @SerialEntry
     public boolean lockOnTargeting = false;
@@ -28,4 +29,11 @@ public class Config {
 
     @SerialEntry
     public boolean unlimitedReach = false;
+
+    @SerialEntry
+    public boolean moveMode = false;
+
+    public enum ProjectileTargeting { NONE, LEGACY, CAMERA_PLANE, VERTICAL_PLANE }
+    @SerialEntry
+    public ProjectileTargeting projectileTargeting = ProjectileTargeting.LEGACY;
 }

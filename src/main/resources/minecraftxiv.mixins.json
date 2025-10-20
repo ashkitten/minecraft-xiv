@@ -13,6 +13,7 @@
     "LivingEntityRendererMixin",
     "MinecraftClientMixin",
     "MouseMixin",
+    "RenderSystemMixin",
     "WorldRendererMixin",
     "client.PlayerEntityMixin"
   ],

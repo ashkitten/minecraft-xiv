@@ -37,6 +37,7 @@ public class ClientInit implements ClientModInitializer {
     public static KeyBinding zoomInBinding;
     public static KeyBinding zoomOutBinding;
     public static KeyBinding cycleTargetBinding;
+    public static KeyBinding moveModeBinding;
 
     @Nullable
     public static Capabilities capabilities;
@@ -119,6 +120,12 @@ public class ClientInit implements ClientModInitializer {
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_TAB,
                 "minecraftxiv.binds.category"
+        ));
+        KeyBindingHelper.registerKeyBinding(moveModeBinding = new KeyBinding(
+                "minecraftxiv.binds.moveMode",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_GRAVE_ACCENT,
+                "minecraftxiv.binds.experimental"
         ));
 
         listenCapabilities(capabilities -> {

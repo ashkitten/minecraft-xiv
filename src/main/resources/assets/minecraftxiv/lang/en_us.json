@@ -1,26 +1,60 @@
 {
   "minecraftxiv.binds.category": "Minecraft XIV",
+
   "minecraftxiv.binds.toggle": "Toggle perspective",
   "minecraftxiv.binds.moveCamera": "Move camera",
   "minecraftxiv.binds.zoomIn": "Zoom in",
   "minecraftxiv.binds.zoomOut": "Zoom out",
   "minecraftxiv.binds.cycleTarget": "Cycle target",
+
+  "minecraftxiv.binds.experimental": "Minecraft XIV (Experimental)",
+
+  "minecraftxiv.binds.moveMode": "Toggle Move Mode",
+
+
+
   "minecraftxiv.config.title": "Minecraft XIV",
+
   "minecraftxiv.config.category.options": "Options",
+
   "minecraftxiv.config.scrollWheelZoom.name": "Scroll wheel zoom",
   "minecraftxiv.config.scrollWheelZoom.description": "Zoom with scroll wheel (overrides hotbar scrolling).",
+
   "minecraftxiv.config.movementCameraRelative.name": "Camera-relative movement",
-  "minecraftxiv.config.movementCameraRelative.description": "Make movement work relative to the camera instead of the player.",
+  "minecraftxiv.config.movementCameraRelative.description": "When movement should be interpreted as relative to the camera instead of the player.",
+  "minecraftxiv.config.movementCameraRelative.always": "Always",
+  "minecraftxiv.config.movementCameraRelative.never": "Never",
+  "minecraftxiv.config.movementCameraRelative.except_move_mode": "Except in Move Mode",
+
   "minecraftxiv.config.lockOnTargeting.name": "Lock-on targeting",
   "minecraftxiv.config.lockOnTargeting.description": "Cycle through mobs with a keybind. Locked-on mobs override cursor targeting.",
+
+
   "minecraftxiv.config.category.capabilities": "Extras",
+  "minecraftxiv.config.capabilities": "Additional features that aren't vanilla server friendly.\n§eThese must be allowed by the server operator. On local worlds, commands must be enabled.",
+
   "minecraftxiv.config.capabilities.toggle.tooltip": "Toggles if this feature is allowed on the server.",
   "minecraftxiv.config.capabilities.toggle.tooltip.nopermissions": " (No permissions)",
   "minecraftxiv.config.capabilities.toggle.tooltip.notconnected": " (Not connected to a server)",
   "minecraftxiv.config.capabilities.toggle.tooltip.notsupported": " (Not supported on this server)",
-  "minecraftxiv.config.capabilities": "Additional features that aren't vanilla server friendly.\n§eThese must be allowed by the server operator. On local worlds, commands must be enabled.",
+
   "minecraftxiv.config.targetFromCamera.name": "Direct targeting",
   "minecraftxiv.config.targetFromCamera.description": "Pick target from cursor position, bypassing player line of sight.",
+
   "minecraftxiv.config.unlimitedReach.name": "Unlimited reach",
-  "minecraftxiv.config.unlimitedReach.description": "Allow interaction with blocks no matter how far from the player they are."
+  "minecraftxiv.config.unlimitedReach.description": "Allow interaction with blocks no matter how far from the player they are.",
+
+
+  "minecraftxiv.config.category.experimental": "Experimental",
+  "minecraftxiv.config.experimental": "Features that aren't ready for official release yet. These may be buggy or incomplete!",
+
+  "minecraftxiv.config.experimental.moveMode.name": "Move Mode",
+  "minecraftxiv.config.experimental.moveMode.description": "A toggleable mode designed for use with player-relative movement. When enabled, the mouse cursor will target a point on a horizontal plane through the player's head, ignoring entities and blocks.",
+
+  "minecraftxiv.config.experimental.projectileTargeting.name": "Projectile lock-on aiming mode",
+  "minecraftxiv.config.experimental.projectileTargeting.description": "Method for aiming projectiles when locked onto an enemy.\nNone: Normal targeting, same as without lock-on.\nLegacy: Always aim directly toward the enemy's head (same as normal lock-on).\nCamera Plane: Target a point on a plane facing the camera that passes through the enemy's head\nVertical Plane: Target a point on a vertical plane that faces the camera on horizontal axes and passes through the enemy's head.",
+  "minecraftxiv.config.experimental.projectileTargeting.none": "None",
+  "minecraftxiv.config.experimental.projectileTargeting.legacy": "Legacy",
+  "minecraftxiv.config.experimental.projectileTargeting.camera_plane": "Camera Plane",
+  "minecraftxiv.config.experimental.projectileTargeting.vertical_plane": "Vertical Plane"
 }

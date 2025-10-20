@@ -12,13 +12,12 @@ import net.minecraft.client.util.Window;
 import net.minecraft.command.argument.EntityAnchorArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.item.FluidModificationItem;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2d;
-import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
+import wtf.kity.minecraftxiv.util.Util;
 
 @Mixin(Mouse.class)
 public class MouseMixin {
@@ -158,46 +158,52 @@ public class MouseMixin {
                     lastY = null;
                 }
 
-                Vector2d res = new Vector2d(window.getFramebufferWidth(), window.getFramebufferHeight());
-                double aspect = res.x / res.y;
-                Vector2d coords = new Vector2d(mouse.getX(), mouse.getY()).div(res).mul(2.0).sub(new Vector2d(1.0));
-                double fov2 =
-                        Math.toRadians(((GameRendererAccessor) renderer).callGetFov(camera, tickDelta, true)) / 2.0;
-                coords.x *= aspect;
-                coords.y = -coords.y;
-                Vector2d offsets = coords.mul(Math.tan(fov2));
-                Vector3d forward = camera.getRotation().transform(new Vector3d(0.0, 0.0, -1.0));
-                Vector3d right = camera.getRotation().transform(new Vector3d(1.0, 0.0, 0.0));
-                Vector3d up = camera.getRotation().transform(new Vector3d(0.0, 1.0, 0.0));
-                Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
-                Vec3d rayDir = new Vec3d(dir.x, dir.y, dir.z);
-
+                Vec3d rayDir = Util.getMouseRay();
                 Vec3d start = camera.getPos();
-                Vec3d end = start.add(rayDir.multiply(renderer.getFarPlaneDistance()));
 
-                Box box = cameraEntity
-                        .getBoundingBox()
-                        .stretch(rayDir.multiply(renderer.getFarPlaneDistance()))
-                        .expand(1.0, 1.0, 1.0);
-                HitResult hitResult = ProjectileUtil.raycast(
-                        cameraEntity,
-                        start,
-                        end,
-                        box,
-                        entity -> !entity.isSpectator() && entity.canHit(),
-                        renderer.getFarPlaneDistance()
-                );
-                if (hitResult == null) {
-                    hitResult = cameraEntity.getWorld().raycast(new RaycastContext(
+                if (!Mod.mouseMoveMode) {
+                    Vec3d end = start.add(rayDir.multiply(renderer.getFarPlaneDistance()));
+
+                    Box box = cameraEntity
+                            .getBoundingBox()
+                            .stretch(rayDir.multiply(renderer.getFarPlaneDistance()))
+                            .expand(1.0, 1.0, 1.0);
+                    HitResult hitResult = ProjectileUtil.raycast(
+                            cameraEntity,
                             start,
                             end,
-                            RaycastContext.ShapeType.OUTLINE,
-                            RaycastContext.FluidHandling.NONE,
-                            cameraEntity
-                    ));
+                            box,
+                            entity -> !entity.isSpectator() && entity.canHit(),
+                            renderer.getFarPlaneDistance()
+                    );
+                    if (hitResult == null) {
+                        hitResult = cameraEntity.getWorld().raycast(new RaycastContext(
+                                start,
+                                end,
+                                RaycastContext.ShapeType.OUTLINE,
+                                client.player.isHolding(item -> item.getItem() instanceof FluidModificationItem)
+                                        ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE,
+                                cameraEntity
+                        ));
+                    }
+                    Mod.crosshairTarget = hitResult;
+                    client.player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, hitResult.getPos());
+                } else {
+                    Vec3d pos = client.player.getLerpedPos(tickDelta)
+                            .add(new Vec3d(0.0, client.player.getEyeHeight(client.player.getPose()), 0.0));
+                    Vec3d target = Util.lineIntersection(
+                            pos,
+                            new Vec3d(0.0, 1.0, 0.0),
+                            start,
+                            rayDir
+                    );
+                    if (target == null) return;
+                    Mod.crosshairTarget = null;
+                    client.player.lookAt(
+                            EntityAnchorArgumentType.EntityAnchor.EYES,
+                            target.add(target.subtract(pos).multiply(100.0))
+                    );
                 }
-                Mod.crosshairTarget = hitResult;
-                client.player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, hitResult.getPos());
             }
         }
     }

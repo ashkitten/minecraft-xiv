@@ -14,8 +14,10 @@ public class KeyboardMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;openGameMenu(Z)V")
     )
     void openGameMenu(MinecraftClient instance, boolean pauseOnly) {
-        if (Mod.lockOnTarget != null) {
+        if (Mod.lockOnTarget != null || Mod.mouseMoveMode) {
             Mod.lockOnTarget = null;
+            Mod.lockOnMouseTarget = null;
+            Mod.mouseMoveMode = false;
         } else {
             instance.openGameMenu(pauseOnly);
         }

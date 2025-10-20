@@ -71,10 +71,15 @@ public abstract class MinecraftClientMixin {
             if (Mod.enabled) {
                 Mod.zoom = Math.min(Mod.zoom + 0.1f, 2.0f);
             }
+
+            if (ClientInit.moveModeBinding.wasPressed()) {
+                Mod.mouseMoveMode = !Mod.mouseMoveMode;
+            }
         }
 
         if (Mod.lockOnTarget != null && !Mod.lockOnTarget.isAlive()) {
             Mod.lockOnTarget = null;
+            Mod.lockOnMouseTarget = null;
         }
     }
 

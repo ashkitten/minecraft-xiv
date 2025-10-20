@@ -18,7 +18,11 @@ public abstract class KeyboardInputMixin extends Input {
             method = "tick", at = @At("TAIL")
     )
     private void movement(boolean slowDown, float slowDownFactor, CallbackInfo ci) {
-        if (Mod.enabled && Config.GSON.instance().movementCameraRelative) {
+        Config.RelativeMovement movementCameraRelative = Config.GSON.instance().movementCameraRelative;
+        if (Mod.enabled && (
+                movementCameraRelative == Config.RelativeMovement.ALWAYS
+                    || movementCameraRelative == Config.RelativeMovement.EXCEPT_MOVE_MODE && !Mod.mouseMoveMode
+        )) {
             MinecraftClient client = MinecraftClient.getInstance();
             assert client.player != null;
             Vector2f movement = new Vector2f(this.movementForward, this.movementSideways);

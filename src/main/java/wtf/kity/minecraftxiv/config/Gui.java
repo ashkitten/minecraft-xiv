@@ -4,6 +4,7 @@ import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
+import dev.isxander.yacl3.api.controller.EnumControllerBuilder;
 import dev.isxander.yacl3.gui.YACLScreen;
 import dev.isxander.yacl3.gui.controllers.LabelController;
 import net.minecraft.client.MinecraftClient;
@@ -57,21 +58,26 @@ public class Gui implements ModMenuApi {
                                             .binding(
                                                     defaults.scrollWheelZoom,
                                                     () -> config.scrollWheelZoom,
-                                                    (value) -> config.scrollWheelZoom = value
+                                                    value -> config.scrollWheelZoom = value
                                             )
                                             .controller(BooleanControllerBuilder::create)
                                             .build())
                                     .option(Option
-                                            .<Boolean>createBuilder()
+                                            .<Config.RelativeMovement>createBuilder()
                                             .name(Text.translatable("minecraftxiv.config.movementCameraRelative.name"))
                                             .description(OptionDescription.of(Text.translatable(
                                                     "minecraftxiv.config.movementCameraRelative.description")))
                                             .binding(
                                                     defaults.movementCameraRelative,
                                                     () -> config.movementCameraRelative,
-                                                    (value) -> config.movementCameraRelative = value
+                                                    value -> config.movementCameraRelative = value
                                             )
-                                            .controller(BooleanControllerBuilder::create)
+                                            .controller(opt -> EnumControllerBuilder.create(opt)
+                                                    .enumClass(Config.RelativeMovement.class)
+                                                    .valueFormatter(v -> Text.translatable(
+                                                            "minecraftxiv.config.movementCameraRelative." + v.name().toLowerCase())
+                                                    )
+                                            )
                                             .build())
                                     .option(Option
                                             .<Boolean>createBuilder()
@@ -81,7 +87,7 @@ public class Gui implements ModMenuApi {
                                             .binding(
                                                     defaults.lockOnTargeting,
                                                     () -> config.lockOnTargeting,
-                                                    (value) -> config.lockOnTargeting = value
+                                                    value -> config.lockOnTargeting = value
                                             )
                                             .controller(BooleanControllerBuilder::create)
                                             .build())
@@ -105,7 +111,7 @@ public class Gui implements ModMenuApi {
                                                 .binding(
                                                         defaults.targetFromCamera,
                                                         () -> config.targetFromCamera,
-                                                        (value) -> config.targetFromCamera = value
+                                                        value -> config.targetFromCamera = value
                                                 )
                                                 .customController(opt -> new ToggleableController<>(
                                                         opt,
@@ -113,9 +119,9 @@ public class Gui implements ModMenuApi {
                                                         Binding.generic(
                                                                 ClientInit.getCapabilities().targetFromCamera(),
                                                                 () -> ClientInit.getCapabilities().targetFromCamera(),
-                                                                (val) -> ClientInit.submitCapabilities(ClientInit
+                                                                value -> ClientInit.submitCapabilities(ClientInit
                                                                         .getCapabilities()
-                                                                        .withTargetFromCamera(val))
+                                                                        .withTargetFromCamera(value))
                                                         ),
                                                         Gui::capabilityTooltip
                                                 ))
@@ -132,7 +138,7 @@ public class Gui implements ModMenuApi {
                                                 .binding(
                                                         defaults.unlimitedReach,
                                                         () -> config.unlimitedReach,
-                                                        (value) -> config.unlimitedReach = value
+                                                        value -> config.unlimitedReach = value
                                                 )
                                                 .customController(opt -> new ToggleableController<>(
                                                         opt,
@@ -140,9 +146,9 @@ public class Gui implements ModMenuApi {
                                                         Binding.generic(
                                                                 ClientInit.getCapabilities().unlimitedReach(),
                                                                 () -> ClientInit.getCapabilities().unlimitedReach(),
-                                                                (val) -> ClientInit.submitCapabilities(ClientInit
+                                                                value -> ClientInit.submitCapabilities(ClientInit
                                                                         .getCapabilities()
-                                                                        .withUnlimitedReach(val))
+                                                                        .withUnlimitedReach(value))
                                                         ),
                                                         Gui::capabilityTooltip
                                                 ))
@@ -150,6 +156,46 @@ public class Gui implements ModMenuApi {
                                                 .build());
                                         return unlimitedReachOption.get();
                                     }))
+                                    .build())
+                            .category(ConfigCategory
+                                    .createBuilder()
+                                    .name(Text.translatable("minecraftxiv.config.category.experimental"))
+                                    .option(Option
+                                            .<Text>createBuilder()
+                                            .name(Text.empty())
+                                            .binding(Binding.immutable(Text.translatable(
+                                                    "minecraftxiv.config.experimental")))
+                                            .customController(LabelController::new)
+                                            .build())
+                                    .option(Option
+                                            .<Boolean>createBuilder()
+                                            .name(Text.translatable("minecraftxiv.config.moveMode.name"))
+                                            .description(OptionDescription.of(Text.translatable(
+                                                    "minecraftxiv.config.moveMode.description")))
+                                            .binding(
+                                                    defaults.moveMode,
+                                                    () -> config.moveMode,
+                                                    value -> config.moveMode = value
+                                            )
+                                            .controller(BooleanControllerBuilder::create)
+                                            .build())
+                                    .option(Option
+                                            .<Config.ProjectileTargeting>createBuilder()
+                                            .name(Text.translatable("minecraftxiv.config.projectileTargeting.name"))
+                                            .description(OptionDescription.of(Text.translatable(
+                                                    "minecraftxiv.config.projectileTargeting.description")))
+                                            .binding(
+                                                    defaults.projectileTargeting,
+                                                    () -> config.projectileTargeting,
+                                                    value -> config.projectileTargeting = value
+                                            )
+                                            .controller(opt -> EnumControllerBuilder.create(opt)
+                                                    .enumClass(Config.ProjectileTargeting.class)
+                                                    .valueFormatter(v -> Text.translatable(
+                                                            "minecraftxiv.config.projectileTargeting." + v.name().toLowerCase())
+                                                    )
+                                            )
+                                            .build())
                                     .build())
             ).generateScreen(parent);
 
