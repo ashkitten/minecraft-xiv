@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.client.input.Scroller;
+import net.minecraft.client.input.SystemKeycodes;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
@@ -63,7 +64,7 @@ public class MouseMixin {
 
         if (client.isWindowFocused()) {
             if (!cursorLocked) {
-                if (!MinecraftClient.IS_SYSTEM_MAC) {
+                if (SystemKeycodes.UPDATE_PRESSED_STATE_ON_MOUSE_GRAB) {
                     KeyBinding.updatePressedStates();
                 }
 
@@ -71,19 +72,13 @@ public class MouseMixin {
 
                 if (Mod.enabled) {
                     // Merely hide the cursor instead of "disabling" it
-                    InputUtil.setCursorParameters(client.getWindow().getHandle(), GLFW.GLFW_CURSOR_HIDDEN, x, y);
+                    InputUtil.setCursorParameters(client.getWindow(), GLFW.GLFW_CURSOR_HIDDEN, x, y);
                 } else {
-                    InputUtil.setCursorParameters(client.getWindow().getHandle(), GLFW.GLFW_CURSOR_DISABLED, x, y);
-
+                    InputUtil.setCursorParameters(client.getWindow(), GLFW.GLFW_CURSOR_DISABLED, x, y);
                     x = client.getWindow().getWidth() / 2.0;
                     y = client.getWindow().getHeight() / 2.0;
-                }
-
-                client.setScreen(null);
-
-                // This has protected access and i don't wanna AW it lmao hope this works
-                //client.attackCooldown = 10000;
-
+                }                    client.setScreen(null);
+                client.attackCooldown = 10000;
                 hasResolutionChanged = true;
             }
         }
@@ -102,23 +97,23 @@ public class MouseMixin {
                 x = client.getWindow().getWidth() / 2.0;
                 y = client.getWindow().getHeight() / 2.0;
             }
-            InputUtil.setCursorParameters(client.getWindow().getHandle(), GLFW.GLFW_CURSOR_NORMAL, x, y);
+            InputUtil.setCursorParameters(client.getWindow(), GLFW.GLFW_CURSOR_NORMAL, x, y);
         }
     }
 
     @Inject(
             method = "updateMouse",
-            at = @At(value = "INVOKE", target = "net/minecraft/client/tutorial/TutorialManager.onUpdateMouse(DD)V")
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/TutorialManager;onUpdateMouse(DD)V")
     )
     private void updateMouseA(
-            double timeDelta, CallbackInfo ci, @Local(ordinal = 1) double i, @Local(ordinal = 2) double j, @Local int k
+            double timeDelta, CallbackInfo ci, @Local(ordinal = 1) double i, @Local(ordinal = 2) double j
     ) {
         GameRenderer renderer = client.gameRenderer;
         Window window = client.getWindow();
         Mouse mouse = client.mouse;
         Camera camera = renderer.getCamera();
         float tickDelta = camera.getLastTickProgress();
-        Entity cameraEntity = client.cameraEntity;
+        Entity cameraEntity = client.getCameraEntity();
 
         if (Mod.enabled && cameraEntity != null && client.player != null) {
             if (ClientInit.moveCameraBinding.isPressed()) {
@@ -127,10 +122,10 @@ public class MouseMixin {
                     lastY = y;
                     x = window.getFramebufferWidth() / 2.0;
                     y = window.getFramebufferHeight() / 2.0;
-                    InputUtil.setCursorParameters(window.getHandle(), InputUtil.GLFW_CURSOR_DISABLED, x, y);
+                    InputUtil.setCursorParameters(window, InputUtil.GLFW_CURSOR_DISABLED, x, y);
                 }
                 float yaw1 = (float) (Mod.yaw + i / 8.0D);
-                float pitch1 = (float) (Mod.pitch + j * k / 8.0D);
+                float pitch1 = (float) (Mod.pitch + j / 8.0D);
                 Mod.yaw = yaw1;
                 Mod.pitch = pitch1;
                 if (Math.abs(Mod.pitch) > 90.0F) {
@@ -147,7 +142,7 @@ public class MouseMixin {
             } else {
                 if (lastX != null && lastY != null) {
                     InputUtil.setCursorParameters(
-                            client.getWindow().getHandle(),
+                            client.getWindow(),
                             GLFW.GLFW_CURSOR_HIDDEN,
                             lastX,
                             lastY
@@ -172,7 +167,7 @@ public class MouseMixin {
                 Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
                 Vec3d rayDir = new Vec3d(dir.x, dir.y, dir.z);
 
-                Vec3d start = camera.getPos();
+                Vec3d start = camera.getCameraPos();
                 Vec3d end = start.add(rayDir.multiply(renderer.getFarPlaneDistance()));
 
                 Box box = cameraEntity
@@ -188,7 +183,7 @@ public class MouseMixin {
                         renderer.getFarPlaneDistance()
                 );
                 if (hitResult == null) {
-                    hitResult = cameraEntity.getWorld().raycast(new RaycastContext(
+                    hitResult = cameraEntity.getEntityWorld().raycast(new RaycastContext(
                             start,
                             end,
                             RaycastContext.ShapeType.OUTLINE,

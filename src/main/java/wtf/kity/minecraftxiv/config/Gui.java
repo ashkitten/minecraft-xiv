@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 public class Gui implements ModMenuApi {
     private static Text capabilityTooltip() {
         MutableText text = Text.translatable("minecraftxiv.config.capabilities.toggle.tooltip");
-        if (!ClientInit.isConnectedToServer()) {
+        if (ClientInit.isDisconnected()) {
             text.append(Text
                     .translatable("minecraftxiv.config.capabilities.toggle.tooltip.notconnected")
                     .formatted(Formatting.YELLOW));

@@ -12,13 +12,17 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.OpenToLanScreen;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.command.permission.Permission;
+import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import wtf.kity.minecraftxiv.config.Config;
@@ -45,23 +49,26 @@ public class ClientInit implements ClientModInitializer {
         return capabilities != null;
     }
 
-    public static boolean isConnectedToServer() {
+    public static boolean isDisconnected() {
         ClientPlayNetworkHandler clientPlayNetworkHandler = MinecraftClient.getInstance().getNetworkHandler();
-        return clientPlayNetworkHandler != null && clientPlayNetworkHandler.getConnection().isOpen();
+        return clientPlayNetworkHandler == null || !clientPlayNetworkHandler.getConnection().isOpen();
     }
 
     public static boolean canChangeCapabilities() {
         MinecraftClient client = MinecraftClient.getInstance();
         // We need to have received capabilities from the server already, and have adequate permissions to change them
-        return serverSupportsCapabilities() && client.player != null && client.player.hasPermissionLevel(2);
+        return serverSupportsCapabilities() && client.player != null && client.player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS));
     }
 
     public static Capabilities getCapabilities() {
-        if (!isConnectedToServer()) {
+        if (isDisconnected()) {
             return Capabilities.all();
-        } else if (!serverSupportsCapabilities()) {
+        }
+
+        if (!serverSupportsCapabilities()) {
             return Capabilities.none();
         }
+
         return capabilities;
     }
 
@@ -90,35 +97,37 @@ public class ClientInit implements ClientModInitializer {
         instance = this;
         Config.GSON.load();
 
+        KeyBinding.Category category = KeyBinding.Category.create(Identifier.of("minecraftxiv.binds.category"));
+
         KeyBindingHelper.registerKeyBinding(toggleBinding = new KeyBinding(
                 "minecraftxiv.binds.toggle",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_F4,
-                "minecraftxiv.binds.category"
+                 category
         ));
         KeyBindingHelper.registerKeyBinding(moveCameraBinding = new KeyBinding(
                 "minecraftxiv.binds.moveCamera",
                 InputUtil.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_3,
-                "minecraftxiv.binds.category"
+                category
         ));
         KeyBindingHelper.registerKeyBinding(zoomInBinding = new KeyBinding(
                 "minecraftxiv.binds.zoomIn",
                 InputUtil.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_6,
-                "minecraftxiv.binds.category"
+                category
         ));
         KeyBindingHelper.registerKeyBinding(zoomOutBinding = new KeyBinding(
                 "minecraftxiv.binds.zoomOut",
                 InputUtil.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_7,
-                "minecraftxiv.binds.category"
+                category
         ));
         KeyBindingHelper.registerKeyBinding(cycleTargetBinding = new KeyBinding(
                 "minecraftxiv.binds.cycleTarget",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_TAB,
-                "minecraftxiv.binds.category"
+                category
         ));
 
         listenCapabilities(capabilities -> {
@@ -151,14 +160,14 @@ public class ClientInit implements ClientModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register((minecraftServer) -> capabilities = Capabilities.none());
 
         ServerPlayConnectionEvents.JOIN.register((networkHandler, packetSender, minecraftServer) -> {
-            if (networkHandler.player.hasPermissionLevel(2)) {
+            if (networkHandler.player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS))) {
                 capabilities = Capabilities.load();
+                packetSender.sendPacket(capabilities);
             }
-            packetSender.sendPacket(capabilities);
         });
 
         ServerPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
-            if (!context.player().hasPermissionLevel(2)) {
+            if (!context.player().getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS))) {
                 return;
             }
 

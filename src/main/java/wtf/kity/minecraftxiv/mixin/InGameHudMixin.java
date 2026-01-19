@@ -44,11 +44,10 @@ public class InGameHudMixin {
 
             //Using RenderSystem on purpose.
             //The f3 "axes" debug cursor calls RenderSystem directly instead of using matrix stack.
-            context.getMatrices().push();
+            context.getMatrices().pushMatrix();
             context.getMatrices().translate(
-                    -context.getScaledWindowWidth() / 2d + mouse.getX() / scaleFactor,
-                    -context.getScaledWindowHeight() / 2f + mouse.getY() / scaleFactor,
-                    0
+                    (float) (-context.getScaledWindowWidth() / 2d + mouse.getX() / scaleFactor),
+                    (float) (-context.getScaledWindowHeight() / 2f + mouse.getY() / scaleFactor)
             );
         }
     }
@@ -56,7 +55,7 @@ public class InGameHudMixin {
     @Inject(method = "renderCrosshair", at = @At("RETURN"))
     private void crosshairPost(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (Mod.enabled) {
-            context.getMatrices().pop();
+            context.getMatrices().popMatrix();
         }
     }
 }

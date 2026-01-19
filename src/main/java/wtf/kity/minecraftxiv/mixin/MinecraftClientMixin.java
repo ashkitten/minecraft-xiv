@@ -5,7 +5,14 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.Perspective;
+import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Box;
+import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,8 +22,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import wtf.kity.minecraftxiv.ClientInit;
+import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
+
+import java.util.Comparator;
+import java.util.stream.StreamSupport;
 
 @Mixin(MinecraftClient.class)
 public abstract class MinecraftClientMixin {
@@ -28,9 +39,20 @@ public abstract class MinecraftClientMixin {
     @Final
     public GameOptions options;
 
+    @Shadow
+    @org.jspecify.annotations.Nullable
+    public ClientWorld world;
+
+    @Shadow
+    private @org.jspecify.annotations.Nullable Entity cameraEntity;
+
+    @Shadow
+    @Final
+    private RenderTickCounter.Dynamic renderTickCounter;
+
     @Inject(method = "tick", at = @At("TAIL"))
     public void tick(CallbackInfo ci) {
-        if (this.player == null) {
+        if (this.player == null || this.world == null) {
             return;
         }
         // For some reason, KeyBinding#wasPressed doesn't work here, so I'm using KeyBinding#isPressed, which doesn't
@@ -67,6 +89,35 @@ public abstract class MinecraftClientMixin {
             if (ClientInit.zoomOutBinding.wasPressed()) {
                 Mod.zoom = Math.min(Mod.zoom + 0.1f, 2.0f);
             }
+
+            if (Config.GSON.instance().lockOnTargeting && ClientInit.cycleTargetBinding.wasPressed()) {
+                // Wrap around if we're already targeting, but we don't hit anything
+                int wrapAround = Mod.lockOnTarget != null ? 1 : 0;
+                do {
+                    Mod.lockOnTarget = StreamSupport.stream(world.getEntities().spliterator(), true)
+                            .filter(
+                                    entity -> {
+                                        if (entity == player) return false;
+                                        if (!entity.isAttackable()) return false;
+                                        if (entity.isInvisibleTo(player)) return false;
+                                        if (Mod.lockOnTarget != null &&
+                                                player.distanceTo(entity) <= player.distanceTo(Mod.lockOnTarget)) {
+                                            return false;
+                                        }
+
+                                        // No blocks in the way
+                                        return player.getEntityWorld().raycast(new RaycastContext(
+                                                player.getCameraPosVec(renderTickCounter.getTickProgress(true)),
+                                                entity.getEyePos(),
+                                                RaycastContext.ShapeType.OUTLINE,
+                                                RaycastContext.FluidHandling.NONE,
+                                                player
+                                        )).getType() == HitResult.Type.MISS;
+                                    })
+                            .min(Comparator.comparingDouble(player::distanceTo))
+                            .orElse(null);
+                } while (Mod.lockOnTarget == null && wrapAround-- > 0);
+            }
         }
 
         if (Mod.lockOnTarget != null && !Mod.lockOnTarget.isAlive()) {
@@ -82,8 +133,8 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("HEAD"))
-    public void disconnectPre(Screen screen, CallbackInfo ci) {
+    @Inject(method = "disconnect(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
+    public void disconnectPre(Text reasonText, CallbackInfo ci) {
         ClientInit.capabilities = null;
     }
 }

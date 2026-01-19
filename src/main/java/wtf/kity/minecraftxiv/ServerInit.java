@@ -4,6 +4,9 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.command.permission.Permission;
+import net.minecraft.command.permission.PermissionLevel;
+import net.minecraft.command.permission.PermissionPredicate;
 import net.minecraft.server.network.ServerPlayerEntity;
 import wtf.kity.minecraftxiv.network.Capabilities;
 
@@ -24,7 +27,7 @@ public class ServerInit implements DedicatedServerModInitializer {
         });
 
         ServerPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
-            if (!context.player().hasPermissionLevel(2)) {
+            if (!context.player().getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS))) {
                 return;
             }
 

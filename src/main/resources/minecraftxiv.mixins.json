@@ -6,15 +6,15 @@
   "client": [
     "CameraMixin",
     "GameRendererAccessor",
-    "GameRendererMixin",
+    "ClientPlayerEntityMixin",
     "InGameHudMixin",
     "KeyboardInputMixin",
     "KeyboardMixin",
     "LivingEntityRendererMixin",
     "MinecraftClientMixin",
     "MouseMixin",
-    "WorldRendererMixin",
-    "client.PlayerEntityMixin"
+    "client.PlayerEntityMixin",
+    "IntegratedServerMixin"
   ],
   "server": [
     "server.PlayerEntityMixin"

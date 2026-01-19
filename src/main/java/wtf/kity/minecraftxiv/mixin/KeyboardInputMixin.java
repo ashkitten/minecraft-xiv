@@ -15,7 +15,7 @@ import wtf.kity.minecraftxiv.mod.Mod;
 
 @Mixin(KeyboardInput.class)
 public abstract class KeyboardInputMixin extends Input {
-    @Inject(method = "tick", at = @At("TAIL"))
+    @Inject(method = "tick", at = @At("RETURN"))
     private void tick(CallbackInfo ci) {
         if (Mod.enabled && Config.GSON.instance().movementCameraRelative) {
             MinecraftClient client = MinecraftClient.getInstance();
