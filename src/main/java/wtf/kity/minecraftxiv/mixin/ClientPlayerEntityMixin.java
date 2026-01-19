@@ -1,11 +1,10 @@
 package wtf.kity.minecraftxiv.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.command.argument.EntityAnchorArgumentType;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,15 +14,15 @@ import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
 
-@Mixin(ClientPlayerEntity.class)
+@Mixin(LocalPlayer.class)
 public abstract class ClientPlayerEntityMixin {
     @Shadow
-    private static HitResult checkCrosshairTargetRange(HitResult hitResult, Vec3d cameraPos, double range) {
+    private static HitResult filterHitResult(HitResult hitResult, Vec3 cameraPos, double range) {
         return null;
     }
 
 
-    @Inject(method = "getCrosshairTarget(Lnet/minecraft/entity/Entity;DDF)Lnet/minecraft/util/hit/HitResult;", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "pick(Lnet/minecraft/world/entity/Entity;DDF)Lnet/minecraft/world/phys/HitResult;", at = @At("HEAD"), cancellable = true)
     private static void getCrosshairTarget(
             Entity camera,
             double blockInteractionRange,
@@ -32,14 +31,14 @@ public abstract class ClientPlayerEntityMixin {
             CallbackInfoReturnable<HitResult> cir
     ) {
         if (Config.GSON.instance().lockOnTargeting && Mod.lockOnTarget != null) {
-            camera.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, Mod.lockOnTarget.getEyePos());
+            camera.lookAt(EntityAnchorArgument.Anchor.EYES, Mod.lockOnTarget.getEyePosition());
         } else if (Config.GSON.instance().targetFromCamera && ClientInit.getCapabilities().targetFromCamera()) {
             HitResult target = Mod.crosshairTarget;
             if (target == null) return;
             if (!Config.GSON.instance().unlimitedReach) {
-                target = checkCrosshairTargetRange(
+                target = filterHitResult(
                         target,
-                        camera.getCameraPosVec(tickProgress),
+                        camera.getEyePosition(tickProgress),
                         blockInteractionRange
                 );
             }

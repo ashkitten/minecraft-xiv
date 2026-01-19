@@ -1,11 +1,11 @@
 package wtf.kity.minecraftxiv.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.option.Perspective;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,46 +16,46 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.mod.Mod;
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public class InGameHudMixin {
     @Shadow
     @Final
-    private MinecraftClient client;
+    private Minecraft minecraft;
 
     @Redirect(
             method = "renderCrosshair",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/option/Perspective;isFirstPerson()Z")
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/CameraType;isFirstPerson()Z")
     )
-    private boolean isFirstPerson(Perspective perspective) {
+    private boolean isFirstPerson(CameraType perspective) {
         if (perspective.isFirstPerson()) {
             return true;
         }
         if (!Mod.enabled) {
             return false;
         }
-        return !ClientInit.moveCameraBinding.isPressed();
+        return !ClientInit.moveCameraBinding.isDown();
     }
 
     @Inject(method = "renderCrosshair", at = @At("HEAD"))
-    private void crosshairPre(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+    private void crosshairPre(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         if (Mod.enabled) {
-            double scaleFactor = client.getWindow().getScaleFactor();
-            Mouse mouse = client.mouse;
+            double scaleFactor = minecraft.getWindow().getGuiScale();
+            MouseHandler mouse = minecraft.mouseHandler;
 
             //Using RenderSystem on purpose.
             //The f3 "axes" debug cursor calls RenderSystem directly instead of using matrix stack.
-            context.getMatrices().pushMatrix();
-            context.getMatrices().translate(
-                    (float) (-context.getScaledWindowWidth() / 2d + mouse.getX() / scaleFactor),
-                    (float) (-context.getScaledWindowHeight() / 2f + mouse.getY() / scaleFactor)
+            context.pose().pushMatrix();
+            context.pose().translate(
+                    (float) (-context.guiWidth() / 2d + mouse.xpos() / scaleFactor),
+                    (float) (-context.guiHeight() / 2f + mouse.ypos() / scaleFactor)
             );
         }
     }
 
     @Inject(method = "renderCrosshair", at = @At("RETURN"))
-    private void crosshairPost(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+    private void crosshairPost(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
         if (Mod.enabled) {
-            context.getMatrices().popMatrix();
+            context.pose().popMatrix();
         }
     }
 }

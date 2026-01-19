@@ -6,10 +6,10 @@ import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import dev.isxander.yacl3.gui.YACLScreen;
 import dev.isxander.yacl3.gui.controllers.LabelController;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Util;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.network.Capabilities;
@@ -18,20 +18,20 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class Gui implements ModMenuApi {
-    private static Text capabilityTooltip() {
-        MutableText text = Text.translatable("minecraftxiv.config.capabilities.toggle.tooltip");
+    private static Component capabilityTooltip() {
+        MutableComponent text = Component.translatable("minecraftxiv.config.capabilities.toggle.tooltip");
         if (ClientInit.isDisconnected()) {
-            text.append(Text
+            text.append(Component
                     .translatable("minecraftxiv.config.capabilities.toggle.tooltip.notconnected")
-                    .formatted(Formatting.YELLOW));
+                    .withStyle(ChatFormatting.YELLOW));
         } else if (!ClientInit.serverSupportsCapabilities()) {
-            text.append(Text
+            text.append(Component
                     .translatable("minecraftxiv.config.capabilities.toggle.tooltip.notsupported")
-                    .formatted(Formatting.RED));
+                    .withStyle(ChatFormatting.RED));
         } else if (!ClientInit.canChangeCapabilities()) {
-            text.append(Text
+            text.append(Component
                     .translatable("minecraftxiv.config.capabilities.toggle.tooltip.nopermissions")
-                    .formatted(Formatting.RED));
+                    .withStyle(ChatFormatting.RED));
         }
         return text;
     }
@@ -45,14 +45,14 @@ public class Gui implements ModMenuApi {
             YACLScreen screen = (YACLScreen) YetAnotherConfigLib.create(
                     Config.GSON,
                     (defaults, config, builder) -> builder
-                            .title(Text.translatable("minecraftxiv.config.title"))
+                            .title(Component.translatable("minecraftxiv.config.title"))
                             .category(ConfigCategory
                                     .createBuilder()
-                                    .name(Text.translatable("minecraftxiv.config.category.options"))
+                                    .name(Component.translatable("minecraftxiv.config.category.options"))
                                     .option(Option
                                             .<Boolean>createBuilder()
-                                            .name(Text.translatable("minecraftxiv.config.scrollWheelZoom.name"))
-                                            .description(OptionDescription.of(Text.translatable(
+                                            .name(Component.translatable("minecraftxiv.config.scrollWheelZoom.name"))
+                                            .description(OptionDescription.of(Component.translatable(
                                                     "minecraftxiv.config.scrollWheelZoom.description")))
                                             .binding(
                                                     defaults.scrollWheelZoom,
@@ -63,8 +63,8 @@ public class Gui implements ModMenuApi {
                                             .build())
                                     .option(Option
                                             .<Boolean>createBuilder()
-                                            .name(Text.translatable("minecraftxiv.config.movementCameraRelative.name"))
-                                            .description(OptionDescription.of(Text.translatable(
+                                            .name(Component.translatable("minecraftxiv.config.movementCameraRelative.name"))
+                                            .description(OptionDescription.of(Component.translatable(
                                                     "minecraftxiv.config.movementCameraRelative.description")))
                                             .binding(
                                                     defaults.movementCameraRelative,
@@ -75,8 +75,8 @@ public class Gui implements ModMenuApi {
                                             .build())
                                     .option(Option
                                             .<Boolean>createBuilder()
-                                            .name(Text.translatable("minecraftxiv.config.lockOnTargeting.name"))
-                                            .description(OptionDescription.of(Text.translatable(
+                                            .name(Component.translatable("minecraftxiv.config.lockOnTargeting.name"))
+                                            .description(OptionDescription.of(Component.translatable(
                                                     "minecraftxiv.config.lockOnTargeting.description")))
                                             .binding(
                                                     defaults.lockOnTargeting,
@@ -88,19 +88,19 @@ public class Gui implements ModMenuApi {
                                     .build())
                             .category(ConfigCategory
                                     .createBuilder()
-                                    .name(Text.translatable("minecraftxiv.config.category.capabilities"))
+                                    .name(Component.translatable("minecraftxiv.config.category.capabilities"))
                                     .option(Option
-                                            .<Text>createBuilder()
-                                            .name(Text.empty())
-                                            .binding(Binding.immutable(Text.translatable(
+                                            .<Component>createBuilder()
+                                            .name(Component.empty())
+                                            .binding(Binding.immutable(Component.translatable(
                                                     "minecraftxiv.config.capabilities")))
                                             .customController(LabelController::new)
                                             .build())
                                     .option(Util.make(() -> {
                                         targetFromCameraOption.set(Option
                                                 .<Boolean>createBuilder()
-                                                .name(Text.translatable("minecraftxiv.config.targetFromCamera.name"))
-                                                .description(OptionDescription.of(Text.translatable(
+                                                .name(Component.translatable("minecraftxiv.config.targetFromCamera.name"))
+                                                .description(OptionDescription.of(Component.translatable(
                                                         "minecraftxiv.config.targetFromCamera.description")))
                                                 .binding(
                                                         defaults.targetFromCamera,
@@ -126,8 +126,8 @@ public class Gui implements ModMenuApi {
                                     .option(Util.make(() -> {
                                         unlimitedReachOption.set(Option
                                                 .<Boolean>createBuilder()
-                                                .name(Text.translatable("minecraftxiv.config.unlimitedReach.name"))
-                                                .description(OptionDescription.of(Text.translatable(
+                                                .name(Component.translatable("minecraftxiv.config.unlimitedReach.name"))
+                                                .description(OptionDescription.of(Component.translatable(
                                                         "minecraftxiv.config.unlimitedReach.description")))
                                                 .binding(
                                                         defaults.unlimitedReach,
@@ -156,7 +156,7 @@ public class Gui implements ModMenuApi {
             ClientInit.listenCapabilities(new Consumer<>() {
                 @Override
                 public void accept(Capabilities capabilities) {
-                    if (MinecraftClient.getInstance().currentScreen == screen) {
+                    if (Minecraft.getInstance().screen == screen) {
                         ((ToggleableController<Boolean>) targetFromCameraOption.get().controller())
                                 .inner
                                 .option()

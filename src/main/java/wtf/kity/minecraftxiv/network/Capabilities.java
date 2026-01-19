@@ -2,23 +2,22 @@ package wtf.kity.minecraftxiv.network;
 
 import com.google.gson.*;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements CustomPayload {
-    public static final Id<Capabilities> ID = new Id<>(Identifier.of("minecraftxiv", "capabilities"));
-    public static final PacketCodec<RegistryByteBuf, Capabilities> CODEC = PacketCodec.tuple(
-            PacketCodecs.BOOLEAN,
+public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements CustomPacketPayload {
+    public static final Type<Capabilities> ID = new Type<>(Identifier.fromNamespaceAndPath("minecraftxiv", "capabilities"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, Capabilities> CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL,
             Capabilities::targetFromCamera,
-            PacketCodecs.BOOLEAN,
+            ByteBufCodecs.BOOL,
             Capabilities::unlimitedReach,
             Capabilities::new
     );
@@ -48,7 +47,7 @@ public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) imp
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 

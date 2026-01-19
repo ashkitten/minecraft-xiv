@@ -1,18 +1,5 @@
 package wtf.kity.minecraftxiv.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.client.option.Perspective;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,73 +15,83 @@ import wtf.kity.minecraftxiv.util.Util;
 
 import java.util.Comparator;
 import java.util.stream.StreamSupport;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
 
-@Mixin(MinecraftClient.class)
+@Mixin(Minecraft.class)
 public abstract class MinecraftClientMixin {
     @Shadow
     @Nullable
-    public ClientPlayerEntity player;
+    public LocalPlayer player;
 
     @Shadow
     @Final
-    public GameOptions options;
+    public Options options;
 
     @Shadow
     @org.jspecify.annotations.Nullable
-    public ClientWorld world;
+    public ClientLevel level;
 
     @Shadow
     private @org.jspecify.annotations.Nullable Entity cameraEntity;
 
     @Shadow
     @Final
-    private RenderTickCounter.Dynamic renderTickCounter;
+    private DeltaTracker.Timer deltaTracker;
 
     @Inject(method = "tick", at = @At("TAIL"))
     public void tick(CallbackInfo ci) {
-        if (this.player == null || this.world == null) {
+        if (this.player == null || this.level == null) {
             return;
         }
         // For some reason, KeyBinding#wasPressed doesn't work here, so I'm using KeyBinding#isPressed, which doesn't
         // seem to break anything.
         //if (ClientInit.getInstance().getKeyBinding().wasPressed() || (this.options.togglePerspectiveKey.wasPressed
         // () && mod.isEnabled())) {
-        if (ClientInit.toggleBinding.wasPressed() || this.options.togglePerspectiveKey.isPressed() && Mod.enabled) {
+        if (ClientInit.toggleBinding.consumeClick() || this.options.keyTogglePerspective.isDown() && Mod.enabled) {
             if (Mod.enabled) {
-                options.setPerspective(Mod.lastPerspective);
+                options.setCameraType(Mod.lastPerspective);
                 Util.debug("Disabled Minecraft XIV");
             } else {
-                Mod.lastPerspective = this.options.getPerspective();
-                this.options.setPerspective(Perspective.THIRD_PERSON_BACK);
-                if (Mod.lastPerspective == Perspective.THIRD_PERSON_FRONT) {
-                    Mod.yaw = ((180 + this.player.getYaw() + 180) % 360) - 180;
-                    Mod.pitch = -this.player.getPitch();
+                Mod.lastPerspective = this.options.getCameraType();
+                this.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+                if (Mod.lastPerspective == CameraType.THIRD_PERSON_FRONT) {
+                    Mod.yaw = ((180 + this.player.getYRot() + 180) % 360) - 180;
+                    Mod.pitch = -this.player.getXRot();
                 } else {
-                    Mod.yaw = this.player.getYaw();
-                    Mod.pitch = this.player.getPitch();
+                    Mod.yaw = this.player.getYRot();
+                    Mod.pitch = this.player.getXRot();
                 }
                 Util.debug("Enabled Minecraft XIV");
             }
             Mod.enabled = !Mod.enabled;
 
             // Re-lock the cursor so it correctly changes state
-            MinecraftClient.getInstance().mouse.lockCursor();
+            Minecraft.getInstance().mouseHandler.grabMouse();
         }
 
         if (Mod.enabled) {
-            if (ClientInit.zoomInBinding.wasPressed()) {
+            if (ClientInit.zoomInBinding.consumeClick()) {
                 Mod.zoom = Math.max(Mod.zoom - 0.1f, 0.0f);
             }
 
-            if (ClientInit.zoomOutBinding.wasPressed()) {
+            if (ClientInit.zoomOutBinding.consumeClick()) {
                 Mod.zoom = Math.min(Mod.zoom + 0.1f, 2.0f);
             }
 
-            if (Config.GSON.instance().lockOnTargeting && ClientInit.cycleTargetBinding.wasPressed()) {
+            if (Config.GSON.instance().lockOnTargeting && ClientInit.cycleTargetBinding.consumeClick()) {
                 // Wrap around if we're already targeting, but we don't hit anything
                 int wrapAround = Mod.lockOnTarget != null ? 1 : 0;
                 do {
-                    Mod.lockOnTarget = StreamSupport.stream(world.getEntities().spliterator(), true)
+                    Mod.lockOnTarget = StreamSupport.stream(level.entitiesForRendering().spliterator(), true)
                             .filter(
                                     entity -> {
                                         if (entity == player) return false;
@@ -106,11 +103,11 @@ public abstract class MinecraftClientMixin {
                                         }
 
                                         // No blocks in the way
-                                        return player.getEntityWorld().raycast(new RaycastContext(
-                                                player.getCameraPosVec(renderTickCounter.getTickProgress(true)),
-                                                entity.getEyePos(),
-                                                RaycastContext.ShapeType.OUTLINE,
-                                                RaycastContext.FluidHandling.NONE,
+                                        return player.level().clip(new ClipContext(
+                                                player.getEyePosition(deltaTracker.getGameTimeDeltaPartialTick(true)),
+                                                entity.getEyePosition(),
+                                                ClipContext.Block.OUTLINE,
+                                                ClipContext.Fluid.NONE,
                                                 player
                                         )).getType() == HitResult.Type.MISS;
                                     })
@@ -125,7 +122,7 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "hasOutline", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "shouldEntityAppearGlowing", at = @At("HEAD"), cancellable = true)
     public void hasOutline(Entity entity, CallbackInfoReturnable<Boolean> cir) {
         if (entity == Mod.lockOnTarget) {
             cir.setReturnValue(true);
@@ -133,8 +130,8 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "disconnect(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
-    public void disconnectPre(Text reasonText, CallbackInfo ci) {
+    @Inject(method = "disconnectFromWorld(Lnet/minecraft/network/chat/Component;)V", at = @At("HEAD"))
+    public void disconnectPre(Component reasonText, CallbackInfo ci) {
         ClientInit.capabilities = null;
     }
 }

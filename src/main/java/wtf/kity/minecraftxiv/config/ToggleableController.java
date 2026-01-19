@@ -10,30 +10,35 @@ import dev.isxander.yacl3.api.utils.Dimension;
 import dev.isxander.yacl3.gui.AbstractWidget;
 import dev.isxander.yacl3.gui.YACLScreen;
 import dev.isxander.yacl3.gui.controllers.TickBoxController;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.ParentElement;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.tooltip.TooltipState;
-import net.minecraft.text.Text;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.WidgetTooltipHolder;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
+import wtf.kity.minecraftxiv.ClientInit;
 
 public class ToggleableController<T> implements Controller<T> {
     public final Option<Boolean> enabled;
     public final Controller<T> inner;
     private final Option<T> option;
-    private final Supplier<Text> tickBoxTooltipFunction;
+    private final Supplier<Component> tickBoxTooltipFunction;
 
     public ToggleableController(
             Option<T> option,
             Function<Option<T>, ControllerBuilder<T>> inner,
             Binding<Boolean> availableBinding,
-            Supplier<Text> tickBoxTooltipFunction
+            Supplier<Component> tickBoxTooltipFunction
     ) {
         this.option = option;
         this.inner = inner.apply(option).build();
@@ -41,10 +46,11 @@ public class ToggleableController<T> implements Controller<T> {
 
         this.enabled = Option
                 .<Boolean>createBuilder()
-                .name(Text.empty())
+                .name(Component.empty())
                 .stateManager(StateManager.createInstant(availableBinding))
                 .controller(TickBoxControllerBuilder::create)
                 .addListener((opt, event) -> this.option.setAvailable(opt.pendingValue()))
+                .available(option.available())
                 .build();
     }
 
@@ -54,7 +60,7 @@ public class ToggleableController<T> implements Controller<T> {
     }
 
     @Override
-    public Text formatValue() {
+    public Component formatValue() {
         return null;
     }
 
@@ -63,11 +69,11 @@ public class ToggleableController<T> implements Controller<T> {
         return new ToggleableControllerWidget<>(this, screen, widgetDimension);
     }
 
-    public static class ToggleableControllerWidget<T> extends AbstractWidget implements ParentElement {
+    public static class ToggleableControllerWidget<T> extends AbstractWidget implements ContainerEventHandler {
         private final ToggleableController<T> control;
         private final TickBoxController.TickBoxControllerElement tickBox;
         private final AbstractWidget inner;
-        private final TooltipState tooltip = new TooltipState();
+        private final WidgetTooltipHolder tooltip = new WidgetTooltipHolder();
 
         public ToggleableControllerWidget(ToggleableController<T> control, YACLScreen screen, Dimension<Integer> dim) {
             super(dim);
@@ -80,22 +86,22 @@ public class ToggleableController<T> implements Controller<T> {
         }
 
         @Override
-        public void render(DrawContext graphics, int mouseX, int mouseY, float delta) {
+        public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
             this.tickBox.render(graphics, mouseX, mouseY, delta);
             this.inner.render(graphics, mouseX, mouseY, delta);
-            this.tooltip.setTooltip(Tooltip.of(this.control.tickBoxTooltipFunction.get()));
-            this.tooltip.render(
+            this.tooltip.set(Tooltip.create(this.control.tickBoxTooltipFunction.get()));
+            this.tooltip.refreshTooltipForNextRenderPass(
                     graphics,
                     mouseX,
                     mouseY,
                     this.tickBox.isHovered(),
                     this.tickBox.isFocused(),
-                    this.tickBox.getNavigationFocus()
+                    this.tickBox.getRectangle()
             );
         }
 
         @Override
-        public List<? extends Element> children() {
+        public @NotNull List<? extends GuiEventListener> children() {
             return List.of(this.tickBox, this.inner);
         }
 
@@ -110,7 +116,7 @@ public class ToggleableController<T> implements Controller<T> {
         }
 
         @Override
-        public @Nullable Element getFocused() {
+        public @Nullable GuiEventListener getFocused() {
             if (this.tickBox.isFocused()) {
                 return tickBox;
             } else if (this.inner.isFocused()) {
@@ -120,7 +126,7 @@ public class ToggleableController<T> implements Controller<T> {
         }
 
         @Override
-        public void setFocused(@Nullable Element focused) {
+        public void setFocused(@Nullable GuiEventListener focused) {
             if (focused instanceof AbstractWidget) {
                 focused.setFocused(true);
             }
@@ -158,10 +164,39 @@ public class ToggleableController<T> implements Controller<T> {
         }
 
         @Override
-        public void appendNarrations(NarrationMessageBuilder builder) {
-            this.tickBox.appendNarrations(builder);
-            this.inner.appendNarrations(builder);
+        public void updateNarration(NarrationElementOutput builder) {
+            this.tickBox.updateNarration(builder);
+            this.inner.updateNarration(builder);
         }
 
+        @Override
+        public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean doubleClick) {
+            return ContainerEventHandler.super.mouseClicked(mouseButtonEvent, doubleClick);
+        }
+
+        @Override
+        public boolean mouseReleased(@NotNull MouseButtonEvent mouseButtonEvent) {
+            return ContainerEventHandler.super.mouseReleased(mouseButtonEvent);
+        }
+
+        @Override
+        public boolean mouseDragged(@NotNull MouseButtonEvent mouseButtonEvent, double dx, double dy) {
+            return ContainerEventHandler.super.mouseDragged(mouseButtonEvent, dx, dy);
+        }
+
+        @Override
+        public boolean keyPressed(@NotNull KeyEvent keyEvent) {
+            return ContainerEventHandler.super.keyPressed(keyEvent);
+        }
+
+        @Override
+        public boolean keyReleased(@NotNull KeyEvent keyEvent) {
+            return ContainerEventHandler.super.keyReleased(keyEvent);
+        }
+
+        @Override
+        public boolean charTyped(@NotNull CharacterEvent characterEvent) {
+            return ContainerEventHandler.super.charTyped(characterEvent);
+        }
     }
 }

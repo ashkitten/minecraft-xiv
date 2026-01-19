@@ -1,21 +1,20 @@
 package wtf.kity.minecraftxiv.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.client.MinecraftClient;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.Model;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.*;
-import net.minecraft.client.render.command.ModelCommandRenderer;
-import net.minecraft.client.render.command.ModelCommandRenderer.CrumblingOverlayCommand;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.entity.LivingEntityRenderer;
-import net.minecraft.client.render.entity.model.EntityModel;
-import net.minecraft.client.render.entity.state.LivingEntityRenderState;
-import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
-import net.minecraft.client.render.state.CameraRenderState;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,39 +24,39 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderState, SS> {
     @Shadow
-    public abstract Identifier getTexture(S state);
+    public abstract Identifier getTextureLocation(S state);
 
     @Redirect(
-            method = "render(Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;Lnet/minecraft/client/render/state/CameraRenderState;)V",
+            method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/render/command/OrderedRenderCommandQueue;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/RenderLayer;IIILnet/minecraft/client/texture/Sprite;ILnet/minecraft/client/render/command/ModelCommandRenderer$CrumblingOverlayCommand;)V"
+                    target = "Lnet/minecraft/client/renderer/SubmitNodeCollector;submitModel(Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/rendertype/RenderType;IIILnet/minecraft/client/renderer/texture/TextureAtlasSprite;ILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;)V"
             )
     )
     public void render(
-            OrderedRenderCommandQueue instance,
+            SubmitNodeCollector instance,
             Model<? super SS> model,
             SS state,
-            MatrixStack matrices,
-            RenderLayer renderLayer,
+            PoseStack matrices,
+            RenderType renderLayer,
             int light,
             int overlay,
             int tintedColor,
-            @Nullable Sprite sprite,
+            @Nullable TextureAtlasSprite sprite,
             int outlineColor,
-            @Nullable CrumblingOverlayCommand crumblingOverlay,
+            @Nullable CrumblingOverlay crumblingOverlay,
             @Local(argsOnly = true) S livingEntityRenderState
     ) {
-        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        LocalPlayer player = Minecraft.getInstance().player;
 
-        if (livingEntityRenderState instanceof PlayerEntityRenderState playerEntityRenderState
+        if (livingEntityRenderState instanceof AvatarRenderState playerEntityRenderState
                 && player != null
                 && playerEntityRenderState.id == player.getId()
-                && camera.isThirdPerson()
-                && camera.getCameraPos().distanceTo(player.getEyePos()) < 1.0) {
+                && camera.isDetached()
+                && camera.position().distanceTo(player.getEyePosition()) < 1.0) {
             // Same as spectator mode (ref. LivingEntityRenderer#getRenderLayer)
-            renderLayer = RenderLayers.itemEntityTranslucentCull(this.getTexture((S) state));
+            renderLayer = RenderTypes.itemEntityTranslucentCull(this.getTextureLocation((S) state));
             tintedColor = 0x26FFFFFF;
         }
 

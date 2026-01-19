@@ -1,6 +1,6 @@
 package wtf.kity.minecraftxiv.mixin;
 
-import net.minecraft.client.render.Camera;
+import net.minecraft.client.Camera;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,17 +12,17 @@ import wtf.kity.minecraftxiv.mod.Mod;
 public abstract class CameraMixin {
     @SuppressWarnings("unused")
     @Shadow
-    private float yaw;
+    private float yRot;
     @SuppressWarnings("unused")
     @Shadow
-    private float pitch;
+    private float xRot;
 
     @Shadow
     protected abstract void setRotation(float yaw, float pitch);
 
     @ModifyArgs(
-            method = "update",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;setRotation(FF)V", ordinal = 0)
+            method = "setup",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V", ordinal = 0)
     )
     public void a(Args args) {
         if (Mod.enabled) {
@@ -31,8 +31,8 @@ public abstract class CameraMixin {
     }
 
     @ModifyArgs(
-            method = "update",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;clipToSpace(F)F", ordinal = 0)
+            method = "setup",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(F)F", ordinal = 0)
     )
     public void b(Args args) {
         if (Mod.enabled) {

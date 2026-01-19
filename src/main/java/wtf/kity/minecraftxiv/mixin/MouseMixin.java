@@ -1,22 +1,22 @@
 package wtf.kity.minecraftxiv.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
-import net.minecraft.client.input.Scroller;
-import net.minecraft.client.input.SystemKeycodes;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.Window;
-import net.minecraft.command.argument.EntityAnchorArgumentType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.client.Camera;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.ScrollWheelHandler;
+import net.minecraft.client.input.InputQuirks;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
@@ -30,20 +30,20 @@ import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
 
-@Mixin(Mouse.class)
+@Mixin(MouseHandler.class)
 public class MouseMixin {
     @Shadow
-    private boolean cursorLocked;
+    private boolean mouseGrabbed;
     @Shadow
     @Final
-    private MinecraftClient client;
+    private Minecraft minecraft;
     @SuppressWarnings("unused")
     @Shadow
-    private boolean hasResolutionChanged;
+    private boolean ignoreFirstMove;
     @Shadow
-    private double x;
+    private double xpos;
     @Shadow
-    private double y;
+    private double ypos;
 
     @Unique
     @Nullable
@@ -58,28 +58,28 @@ public class MouseMixin {
      * @author quaternary
      */
     @Overwrite
-    public void lockCursor() {
+    public void grabMouse() {
         //btw this is the ol "copy-paste overwrite"
         // TODO make it a good mixin (although i'm not really sure what for)
 
-        if (client.isWindowFocused()) {
-            if (!cursorLocked) {
-                if (SystemKeycodes.UPDATE_PRESSED_STATE_ON_MOUSE_GRAB) {
-                    KeyBinding.updatePressedStates();
+        if (minecraft.isWindowActive()) {
+            if (!mouseGrabbed) {
+                if (InputQuirks.RESTORE_KEY_STATE_AFTER_MOUSE_GRAB) {
+                    KeyMapping.setAll();
                 }
 
-                cursorLocked = true;
+                mouseGrabbed = true;
 
                 if (Mod.enabled) {
                     // Merely hide the cursor instead of "disabling" it
-                    InputUtil.setCursorParameters(client.getWindow(), GLFW.GLFW_CURSOR_HIDDEN, x, y);
+                    InputConstants.grabOrReleaseMouse(minecraft.getWindow(), GLFW.GLFW_CURSOR_HIDDEN, xpos, ypos);
                 } else {
-                    InputUtil.setCursorParameters(client.getWindow(), GLFW.GLFW_CURSOR_DISABLED, x, y);
-                    x = client.getWindow().getWidth() / 2.0;
-                    y = client.getWindow().getHeight() / 2.0;
-                }                    client.setScreen(null);
-                client.attackCooldown = 10000;
-                hasResolutionChanged = true;
+                    InputConstants.grabOrReleaseMouse(minecraft.getWindow(), GLFW.GLFW_CURSOR_DISABLED, xpos, ypos);
+                    xpos = minecraft.getWindow().getScreenWidth() / 2.0;
+                    ypos = minecraft.getWindow().getScreenHeight() / 2.0;
+                }                    minecraft.setScreen(null);
+                minecraft.missTime = 10000;
+                ignoreFirstMove = true;
             }
         }
     }
@@ -90,39 +90,39 @@ public class MouseMixin {
      * @author quaternary
      */
     @Overwrite
-    public void unlockCursor() {
-        if (cursorLocked) {
-            cursorLocked = false;
+    public void releaseMouse() {
+        if (mouseGrabbed) {
+            mouseGrabbed = false;
             if (!Mod.enabled) {
-                x = client.getWindow().getWidth() / 2.0;
-                y = client.getWindow().getHeight() / 2.0;
+                xpos = minecraft.getWindow().getScreenWidth() / 2.0;
+                ypos = minecraft.getWindow().getScreenHeight() / 2.0;
             }
-            InputUtil.setCursorParameters(client.getWindow(), GLFW.GLFW_CURSOR_NORMAL, x, y);
+            InputConstants.grabOrReleaseMouse(minecraft.getWindow(), GLFW.GLFW_CURSOR_NORMAL, xpos, ypos);
         }
     }
 
     @Inject(
-            method = "updateMouse",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/TutorialManager;onUpdateMouse(DD)V")
+            method = "turnPlayer",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onMouse(DD)V")
     )
     private void updateMouseA(
             double timeDelta, CallbackInfo ci, @Local(ordinal = 1) double i, @Local(ordinal = 2) double j
     ) {
-        GameRenderer renderer = client.gameRenderer;
-        Window window = client.getWindow();
-        Mouse mouse = client.mouse;
-        Camera camera = renderer.getCamera();
-        float tickDelta = camera.getLastTickProgress();
-        Entity cameraEntity = client.getCameraEntity();
+        GameRenderer renderer = minecraft.gameRenderer;
+        Window window = minecraft.getWindow();
+        MouseHandler mouse = minecraft.mouseHandler;
+        Camera camera = renderer.getMainCamera();
+        float tickDelta = camera.getPartialTickTime();
+        Entity cameraEntity = minecraft.getCameraEntity();
 
-        if (Mod.enabled && cameraEntity != null && client.player != null) {
-            if (ClientInit.moveCameraBinding.isPressed()) {
+        if (Mod.enabled && cameraEntity != null && minecraft.player != null) {
+            if (ClientInit.moveCameraBinding.isDown()) {
                 if (lastX == null || lastY == null) {
-                    lastX = x;
-                    lastY = y;
-                    x = window.getFramebufferWidth() / 2.0;
-                    y = window.getFramebufferHeight() / 2.0;
-                    InputUtil.setCursorParameters(window, InputUtil.GLFW_CURSOR_DISABLED, x, y);
+                    lastX = xpos;
+                    lastY = ypos;
+                    xpos = window.getWidth() / 2.0;
+                    ypos = window.getHeight() / 2.0;
+                    InputConstants.grabOrReleaseMouse(window, InputConstants.CURSOR_DISABLED, xpos, ypos);
                 }
                 float yaw1 = (float) (Mod.yaw + i / 8.0D);
                 float pitch1 = (float) (Mod.pitch + j / 8.0D);
@@ -135,71 +135,71 @@ public class MouseMixin {
                     Mod.pitch = pitch;
                 }
 
-                this.client.player.setYaw(Mod.yaw);
-                this.client.player.setPitch(Mod.pitch);
+                this.minecraft.player.setYRot(Mod.yaw);
+                this.minecraft.player.setXRot(Mod.pitch);
 
                 Mod.crosshairTarget = null;
             } else {
                 if (lastX != null && lastY != null) {
-                    InputUtil.setCursorParameters(
-                            client.getWindow(),
+                    InputConstants.grabOrReleaseMouse(
+                            minecraft.getWindow(),
                             GLFW.GLFW_CURSOR_HIDDEN,
                             lastX,
                             lastY
                     );
-                    x = lastX;
-                    y = lastY;
+                    xpos = lastX;
+                    ypos = lastY;
                     lastX = null;
                     lastY = null;
                 }
 
-                Vector2d res = new Vector2d(window.getFramebufferWidth(), window.getFramebufferHeight());
+                Vector2d res = new Vector2d(window.getWidth(), window.getHeight());
                 double aspect = res.x / res.y;
-                Vector2d coords = new Vector2d(mouse.getX(), mouse.getY()).div(res).mul(2.0).sub(new Vector2d(1.0));
+                Vector2d coords = new Vector2d(mouse.xpos(), mouse.ypos()).div(res).mul(2.0).sub(new Vector2d(1.0));
                 double fov2 =
                         Math.toRadians(((GameRendererAccessor) renderer).callGetFov(camera, tickDelta, true)) / 2.0;
                 coords.x *= aspect;
                 coords.y = -coords.y;
                 Vector2d offsets = coords.mul(Math.tan(fov2));
-                Vector3d forward = camera.getRotation().transform(new Vector3d(0.0, 0.0, -1.0));
-                Vector3d right = camera.getRotation().transform(new Vector3d(1.0, 0.0, 0.0));
-                Vector3d up = camera.getRotation().transform(new Vector3d(0.0, 1.0, 0.0));
+                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, -1.0));
+                Vector3d right = camera.rotation().transform(new Vector3d(1.0, 0.0, 0.0));
+                Vector3d up = camera.rotation().transform(new Vector3d(0.0, 1.0, 0.0));
                 Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
-                Vec3d rayDir = new Vec3d(dir.x, dir.y, dir.z);
+                Vec3 rayDir = new Vec3(dir.x, dir.y, dir.z);
 
-                Vec3d start = camera.getCameraPos();
-                Vec3d end = start.add(rayDir.multiply(renderer.getFarPlaneDistance()));
+                Vec3 start = camera.position();
+                Vec3 end = start.add(rayDir.scale(renderer.getDepthFar()));
 
-                Box box = cameraEntity
+                AABB box = cameraEntity
                         .getBoundingBox()
-                        .stretch(rayDir.multiply(renderer.getFarPlaneDistance()))
-                        .expand(1.0, 1.0, 1.0);
-                HitResult hitResult = ProjectileUtil.raycast(
+                        .expandTowards(rayDir.scale(renderer.getDepthFar()))
+                        .inflate(1.0, 1.0, 1.0);
+                HitResult hitResult = ProjectileUtil.getEntityHitResult(
                         cameraEntity,
                         start,
                         end,
                         box,
-                        entity -> !entity.isSpectator() && entity.canHit(),
-                        renderer.getFarPlaneDistance()
+                        entity -> !entity.isSpectator() && entity.isPickable(),
+                        renderer.getDepthFar()
                 );
                 if (hitResult == null) {
-                    hitResult = cameraEntity.getEntityWorld().raycast(new RaycastContext(
+                    hitResult = cameraEntity.level().clip(new ClipContext(
                             start,
                             end,
-                            RaycastContext.ShapeType.OUTLINE,
-                            RaycastContext.FluidHandling.NONE,
+                            ClipContext.Block.OUTLINE,
+                            ClipContext.Fluid.NONE,
                             cameraEntity
                     ));
                 }
                 Mod.crosshairTarget = hitResult;
-                client.player.lookAt(EntityAnchorArgumentType.EntityAnchor.EYES, hitResult.getPos());
+                minecraft.player.lookAt(EntityAnchorArgument.Anchor.EYES, hitResult.getLocation());
             }
         }
     }
 
     @Inject(
-            method = "updateMouse",
-            at = @At(value = "INVOKE", target = "net/minecraft/client/network/ClientPlayerEntity.changeLookDirection(DD)V"),
+            method = "turnPlayer",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"),
             cancellable = true
     )
     private void updateMouseB(CallbackInfo info) {
@@ -209,14 +209,14 @@ public class MouseMixin {
     }
 
     @Redirect(
-            method = "onMouseScroll",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/input/Scroller;scrollCycling(DII)I")
+            method = "onScroll",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/ScrollWheelHandler;getNextScrollWheelSelection(DII)I")
     )
     private int scrollCycling(double amount, int selectedIndex, int total) {
         if (Mod.enabled && Config.GSON.instance().scrollWheelZoom) {
             Mod.zoom = Math.max(0.0f, Mod.zoom - (float) amount * 0.2f);
             return selectedIndex;
         }
-        return Scroller.scrollCycling(amount, selectedIndex, total);
+        return ScrollWheelHandler.getNextScrollWheelSelection(amount, selectedIndex, total);
     }
 }

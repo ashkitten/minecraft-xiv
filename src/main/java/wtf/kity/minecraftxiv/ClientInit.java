@@ -4,30 +4,28 @@ package wtf.kity.minecraftxiv;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.OpenToLanScreen;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.command.permission.Permission;
-import net.minecraft.command.permission.PermissionLevel;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.network.Capabilities;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -36,11 +34,11 @@ import java.util.function.Consumer;
 public class ClientInit implements ClientModInitializer {
     public static ClientInit instance;
     private static final ArrayList<Consumer<Capabilities>> capabilityListeners = new ArrayList<>();
-    public static KeyBinding toggleBinding;
-    public static KeyBinding moveCameraBinding;
-    public static KeyBinding zoomInBinding;
-    public static KeyBinding zoomOutBinding;
-    public static KeyBinding cycleTargetBinding;
+    public static KeyMapping toggleBinding;
+    public static KeyMapping moveCameraBinding;
+    public static KeyMapping zoomInBinding;
+    public static KeyMapping zoomOutBinding;
+    public static KeyMapping cycleTargetBinding;
 
     @Nullable
     public static Capabilities capabilities;
@@ -50,14 +48,14 @@ public class ClientInit implements ClientModInitializer {
     }
 
     public static boolean isDisconnected() {
-        ClientPlayNetworkHandler clientPlayNetworkHandler = MinecraftClient.getInstance().getNetworkHandler();
-        return clientPlayNetworkHandler == null || !clientPlayNetworkHandler.getConnection().isOpen();
+        ClientPacketListener clientPlayNetworkHandler = Minecraft.getInstance().getConnection();
+        return clientPlayNetworkHandler == null || !clientPlayNetworkHandler.getConnection().isConnected();
     }
 
     public static boolean canChangeCapabilities() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         // We need to have received capabilities from the server already, and have adequate permissions to change them
-        return serverSupportsCapabilities() && client.player != null && client.player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS));
+        return serverSupportsCapabilities() && client.player != null && client.player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS));
     }
 
     public static Capabilities getCapabilities() {
@@ -73,6 +71,7 @@ public class ClientInit implements ClientModInitializer {
     }
 
     public static void submitCapabilities(Capabilities capabilities) {
+        if (isDisconnected()) return;
         ClientPlayNetworking.send(capabilities);
     }
 
@@ -97,56 +96,56 @@ public class ClientInit implements ClientModInitializer {
         instance = this;
         Config.GSON.load();
 
-        KeyBinding.Category category = KeyBinding.Category.create(Identifier.of("minecraftxiv.binds.category"));
+        KeyMapping.Category category = KeyMapping.Category.register(Identifier.parse("minecraftxiv.binds.category"));
 
-        KeyBindingHelper.registerKeyBinding(toggleBinding = new KeyBinding(
+        KeyMappingHelper.registerKeyMapping(toggleBinding = new KeyMapping(
                 "minecraftxiv.binds.toggle",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_F4,
                  category
         ));
-        KeyBindingHelper.registerKeyBinding(moveCameraBinding = new KeyBinding(
+        KeyMappingHelper.registerKeyMapping(moveCameraBinding = new KeyMapping(
                 "minecraftxiv.binds.moveCamera",
-                InputUtil.Type.MOUSE,
+                InputConstants.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_3,
                 category
         ));
-        KeyBindingHelper.registerKeyBinding(zoomInBinding = new KeyBinding(
+        KeyMappingHelper.registerKeyMapping(zoomInBinding = new KeyMapping(
                 "minecraftxiv.binds.zoomIn",
-                InputUtil.Type.MOUSE,
+                InputConstants.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_6,
                 category
         ));
-        KeyBindingHelper.registerKeyBinding(zoomOutBinding = new KeyBinding(
+        KeyMappingHelper.registerKeyMapping(zoomOutBinding = new KeyMapping(
                 "minecraftxiv.binds.zoomOut",
-                InputUtil.Type.MOUSE,
+                InputConstants.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_7,
                 category
         ));
-        KeyBindingHelper.registerKeyBinding(cycleTargetBinding = new KeyBinding(
+        KeyMappingHelper.registerKeyMapping(cycleTargetBinding = new KeyMapping(
                 "minecraftxiv.binds.cycleTarget",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_TAB,
                 category
         ));
 
         listenCapabilities(capabilities -> {
-            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            LocalPlayer player = Minecraft.getInstance().player;
             if (player != null) {
-                player.sendMessage(Text.literal("§7[§5MinecraftXIV§7] §rAllowed features:"), false);
-                player.sendMessage(Text
+                player.displayClientMessage(Component.literal("§7[§5MinecraftXIV§7] §rAllowed features:"), false);
+                player.displayClientMessage(Component
                         .translatable("minecraftxiv.config.targetFromCamera.name")
-                        .formatted(capabilities.targetFromCamera() ? Formatting.GREEN : Formatting.RED), false);
-                player.sendMessage(Text
+                        .withStyle(capabilities.targetFromCamera() ? ChatFormatting.GREEN : ChatFormatting.RED), false);
+                player.displayClientMessage(Component
                         .translatable("minecraftxiv.config.unlimitedReach.name")
-                        .formatted(capabilities.unlimitedReach() ? Formatting.GREEN : Formatting.RED), false);
+                        .withStyle(capabilities.unlimitedReach() ? ChatFormatting.GREEN : ChatFormatting.RED), false);
             }
         });
 
         // Client side stuff
 
-        PayloadTypeRegistry.playC2S().register(Capabilities.ID, Capabilities.CODEC);
-        PayloadTypeRegistry.playS2C().register(Capabilities.ID, Capabilities.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(Capabilities.ID, Capabilities.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(Capabilities.ID, Capabilities.CODEC);
 
         ClientPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
             capabilities = payload;
@@ -160,14 +159,14 @@ public class ClientInit implements ClientModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register((minecraftServer) -> capabilities = Capabilities.none());
 
         ServerPlayConnectionEvents.JOIN.register((networkHandler, packetSender, minecraftServer) -> {
-            if (networkHandler.player.getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS))) {
+            if (networkHandler.player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))) {
                 capabilities = Capabilities.load();
                 packetSender.sendPacket(capabilities);
             }
         });
 
         ServerPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
-            if (!context.player().getPermissions().hasPermission(new Permission.Level(PermissionLevel.GAMEMASTERS))) {
+            if (!context.player().permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))) {
                 return;
             }
 
@@ -179,7 +178,7 @@ public class ClientInit implements ClientModInitializer {
                     throw new RuntimeException(e);
                 }
 
-                for (ServerPlayerEntity player : context.server().getPlayerManager().getPlayerList()) {
+                for (ServerPlayer player : context.server().getPlayerList().getPlayers()) {
                     ServerPlayNetworking.send(player, capabilities);
                 }
             }
