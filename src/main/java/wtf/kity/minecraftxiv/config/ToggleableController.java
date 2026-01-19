@@ -10,13 +10,17 @@ import dev.isxander.yacl3.api.utils.Dimension;
 import dev.isxander.yacl3.gui.AbstractWidget;
 import dev.isxander.yacl3.gui.YACLScreen;
 import dev.isxander.yacl3.gui.controllers.TickBoxController;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.tooltip.TooltipState;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -45,6 +49,7 @@ public class ToggleableController<T> implements Controller<T> {
                 .stateManager(StateManager.createInstant(availableBinding))
                 .controller(TickBoxControllerBuilder::create)
                 .addListener((opt, event) -> this.option.setAvailable(opt.pendingValue()))
+                .available(option.available())
                 .build();
     }
 
@@ -163,5 +168,34 @@ public class ToggleableController<T> implements Controller<T> {
             this.inner.appendNarrations(builder);
         }
 
+        @Override
+        public boolean mouseClicked(@NotNull Click mouseButtonEvent, boolean doubleClick) {
+            return ParentElement.super.mouseClicked(mouseButtonEvent, doubleClick);
+        }
+
+        @Override
+        public boolean mouseReleased(@NotNull Click mouseButtonEvent) {
+            return ParentElement.super.mouseReleased(mouseButtonEvent);
+        }
+
+        @Override
+        public boolean mouseDragged(@NotNull Click mouseButtonEvent, double dx, double dy) {
+            return ParentElement.super.mouseDragged(mouseButtonEvent, dx, dy);
+        }
+
+        @Override
+        public boolean keyPressed(@NotNull KeyInput keyEvent) {
+            return ParentElement.super.keyPressed(keyEvent);
+        }
+
+        @Override
+        public boolean keyReleased(@NotNull KeyInput keyEvent) {
+            return ParentElement.super.keyReleased(keyEvent);
+        }
+
+        @Override
+        public boolean charTyped(@NotNull CharInput characterEvent) {
+            return ParentElement.super.charTyped(characterEvent);
+        }
     }
 }
