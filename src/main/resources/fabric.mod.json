@@ -27,9 +27,10 @@
   "mixins": [
     "minecraftxiv.mixins.json"
   ],
+  "accessWidener" : "minecraftxiv.classtweaker",
   "depends": {
     "fabricloader": ">=0.18.2",
-    "minecraft": "~26.1-alpha.3",
+    "minecraft": "~26.1-alpha.5",
     "fabric-api": "*",
     "yet_another_config_lib_v3": ">=3.8.0"
   }

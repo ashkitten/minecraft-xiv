@@ -21,7 +21,6 @@ public abstract class ClientPlayerEntityMixin {
         return null;
     }
 
-
     @Inject(method = "pick(Lnet/minecraft/world/entity/Entity;DDF)Lnet/minecraft/world/phys/HitResult;", at = @At("HEAD"), cancellable = true)
     private static void getCrosshairTarget(
             Entity camera,

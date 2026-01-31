@@ -1,9 +1,18 @@
 package wtf.kity.minecraftxiv.mixin;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.client.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -15,10 +24,7 @@ import wtf.kity.minecraftxiv.util.Util;
 
 import java.util.Comparator;
 import java.util.stream.StreamSupport;
-import net.minecraft.client.CameraType;
-import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
+
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -37,25 +43,27 @@ public abstract class MinecraftClientMixin {
     public Options options;
 
     @Shadow
-    @org.jspecify.annotations.Nullable
+    @Nullable
     public ClientLevel level;
 
     @Shadow
-    private @org.jspecify.annotations.Nullable Entity cameraEntity;
+    private @Nullable Entity cameraEntity;
 
-    @Shadow
-    @Final
-    private DeltaTracker.Timer deltaTracker;
+    @Unique
+    private double lastX;
+    @Unique
+    private double lastY;
 
     @Inject(method = "tick", at = @At("TAIL"))
     public void tick(CallbackInfo ci) {
         if (this.player == null || this.level == null) {
             return;
         }
-        // For some reason, KeyBinding#wasPressed doesn't work here, so I'm using KeyBinding#isPressed, which doesn't
-        // seem to break anything.
-        //if (ClientInit.getInstance().getKeyBinding().wasPressed() || (this.options.togglePerspectiveKey.wasPressed
-        // () && mod.isEnabled())) {
+
+        Minecraft client = Minecraft.getInstance();
+        MouseHandler mouse = client.mouseHandler;
+        Window window = client.getWindow();
+
         if (ClientInit.toggleBinding.consumeClick() || this.options.keyTogglePerspective.isDown() && Mod.enabled) {
             if (Mod.enabled) {
                 options.setCameraType(Mod.lastPerspective);
@@ -75,7 +83,7 @@ public abstract class MinecraftClientMixin {
             Mod.enabled = !Mod.enabled;
 
             // Re-lock the cursor so it correctly changes state
-            Minecraft.getInstance().mouseHandler.grabMouse();
+            client.mouseHandler.grabMouse();
         }
 
         if (Mod.enabled) {
@@ -87,33 +95,37 @@ public abstract class MinecraftClientMixin {
                 Mod.zoom = Math.min(Mod.zoom + 0.1f, 2.0f);
             }
 
-            if (Config.GSON.instance().lockOnTargeting && ClientInit.cycleTargetBinding.consumeClick()) {
-                // Wrap around if we're already targeting, but we don't hit anything
-                int wrapAround = Mod.lockOnTarget != null ? 1 : 0;
-                do {
+            if (Config.GSON.instance().lockOnTargeting && ClientInit.cycleTargetBinding.consumeClick() && cameraEntity != null) {
+                if (Mod.crosshairTarget instanceof EntityHitResult entity) {
+                    Mod.lockOnTarget = entity.getEntity();
+                } else if (Mod.crosshairTarget instanceof BlockHitResult block) {
                     Mod.lockOnTarget = StreamSupport.stream(level.entitiesForRendering().spliterator(), true)
-                            .filter(
-                                    entity -> {
-                                        if (entity == player) return false;
-                                        if (!entity.isAttackable()) return false;
-                                        if (entity.isInvisibleTo(player)) return false;
-                                        if (Mod.lockOnTarget != null &&
-                                                player.distanceTo(entity) <= player.distanceTo(Mod.lockOnTarget)) {
-                                            return false;
-                                        }
-
-                                        // No blocks in the way
-                                        return player.level().clip(new ClipContext(
-                                                player.getEyePosition(deltaTracker.getGameTimeDeltaPartialTick(true)),
-                                                entity.getEyePosition(),
-                                                ClipContext.Block.OUTLINE,
-                                                ClipContext.Fluid.NONE,
-                                                player
-                                        )).getType() == HitResult.Type.MISS;
-                                    })
-                            .min(Comparator.comparingDouble(player::distanceTo))
+                            .filter(entity ->entity != player
+                                            && entity.isAttackable()
+                                            && !entity.isInvisibleTo(player)
+                                            && entity.level().clip(new ClipContext(
+                                                    client.gameRenderer.getMainCamera().position(),
+                                                    entity.position(),
+                                                    ClipContext.Block.OUTLINE,
+                                                    ClipContext.Fluid.NONE,
+                                                    cameraEntity
+                                    )).getType() != HitResult.Type.BLOCK)
+                            .min(Comparator.comparingDouble(block::distanceTo))
                             .orElse(null);
-                } while (Mod.lockOnTarget == null && wrapAround-- > 0);
+                }
+            }
+
+            if (ClientInit.moveCameraBinding.isDown()) {
+                if (!Mod.moving) {
+                    Mod.moving = true;
+                    lastX = mouse.xpos();
+                    lastY = mouse.ypos();
+                }
+            } else if (Mod.moving) {
+                Mod.moving = false;
+                GLFW.glfwSetCursorPos(window.handle(), lastX, lastY);
+                mouse.xpos = lastX;
+                mouse.ypos = lastY;
             }
         }
 

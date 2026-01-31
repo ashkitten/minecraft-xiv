@@ -1,5 +1,7 @@
 package wtf.kity.minecraftxiv.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
@@ -8,16 +10,16 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.ScrollWheelHandler;
-import net.minecraft.client.input.InputQuirks;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
@@ -26,9 +28,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
+import wtf.kity.minecraftxiv.util.Util;
 
 @Mixin(MouseHandler.class)
 public class MouseMixin {
@@ -37,68 +39,48 @@ public class MouseMixin {
     @Shadow
     @Final
     private Minecraft minecraft;
-    @SuppressWarnings("unused")
-    @Shadow
-    private boolean ignoreFirstMove;
     @Shadow
     private double xpos;
     @Shadow
     private double ypos;
 
-    @Unique
-    @Nullable
-    private Double lastX;
-    @Unique
-    @Nullable
-    private Double lastY;
-
-    /**
-     * It doesn't make sense to "lock" the cursor of an absolute pointing device.
-     *
-     * @author quaternary
-     */
-    @Overwrite
-    public void grabMouse() {
-        //btw this is the ol "copy-paste overwrite"
-        // TODO make it a good mixin (although i'm not really sure what for)
-
-        if (minecraft.isWindowActive()) {
-            if (!mouseGrabbed) {
-                if (InputQuirks.RESTORE_KEY_STATE_AFTER_MOUSE_GRAB) {
-                    KeyMapping.setAll();
-                }
-
-                mouseGrabbed = true;
-
-                if (Mod.enabled) {
-                    // Merely hide the cursor instead of "disabling" it
-                    InputConstants.grabOrReleaseMouse(minecraft.getWindow(), GLFW.GLFW_CURSOR_HIDDEN, xpos, ypos);
-                } else {
-                    InputConstants.grabOrReleaseMouse(minecraft.getWindow(), GLFW.GLFW_CURSOR_DISABLED, xpos, ypos);
-                    xpos = minecraft.getWindow().getScreenWidth() / 2.0;
-                    ypos = minecraft.getWindow().getScreenHeight() / 2.0;
-                }                    minecraft.setScreen(null);
-                minecraft.missTime = 10000;
-                ignoreFirstMove = true;
-            }
+    @WrapMethod(method = "onMove")
+    private void onMove(long handle, double xpos, double ypos, Operation<Void> original) {
+        if (!Mod.enabled || !mouseGrabbed || Mod.moving) {
+            original.call(handle, xpos, ypos);
+            return;
         }
-    }
 
-    /**
-     * It doesn't make sense to "unlock" the cursor of an absolute pointing device.
-     *
-     * @author quaternary
-     */
-    @Overwrite
-    public void releaseMouse() {
-        if (mouseGrabbed) {
-            mouseGrabbed = false;
-            if (!Mod.enabled) {
-                xpos = minecraft.getWindow().getScreenWidth() / 2.0;
-                ypos = minecraft.getWindow().getScreenHeight() / 2.0;
-            }
-            InputConstants.grabOrReleaseMouse(minecraft.getWindow(), GLFW.GLFW_CURSOR_NORMAL, xpos, ypos);
+        Vector2d res = new Vector2d(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight());
+        double aspect = res.x / res.y;
+
+        int margin = 0;
+        double sens = 1 / 16.0;
+
+        if (xpos < margin) {
+            Mod.yaw += (float) ((xpos - margin) * sens * aspect);
+            xpos = margin;
+        } else if (xpos > res.x - margin) {
+            Mod.yaw += (float) ((xpos - (res.x - margin)) * sens * aspect);
+            xpos = res.x - margin;
         }
+
+        if (ypos < margin) {
+            Mod.pitch += (float) ((ypos - margin) * sens);
+            ypos = margin;
+        } else if (ypos > res.y - margin) {
+            Mod.pitch += (float) ((ypos - (res.y - margin)) * sens);
+            ypos = res.y - margin;
+        }
+
+        if (Math.abs(Mod.pitch) > 90.0F) {
+            Mod.yaw += (float) ((Math.abs(Mod.pitch) - 90.0F) * Math.signum(Mod.pitch) / (xpos / res.x * 2 - 1));
+            Mod.pitch = (Mod.pitch > 0.0F) ? 90.0F : -90.0F;
+        }
+
+        GLFW.glfwSetCursorPos(handle, xpos, ypos);
+
+        original.call(handle, xpos, ypos);
     }
 
     @Inject(
@@ -110,24 +92,14 @@ public class MouseMixin {
     ) {
         GameRenderer renderer = minecraft.gameRenderer;
         Window window = minecraft.getWindow();
-        MouseHandler mouse = minecraft.mouseHandler;
         Camera camera = renderer.getMainCamera();
         float tickDelta = camera.getPartialTickTime();
         Entity cameraEntity = minecraft.getCameraEntity();
 
-        if (Mod.enabled && cameraEntity != null && minecraft.player != null) {
-            if (ClientInit.moveCameraBinding.isDown()) {
-                if (lastX == null || lastY == null) {
-                    lastX = xpos;
-                    lastY = ypos;
-                    xpos = window.getWidth() / 2.0;
-                    ypos = window.getHeight() / 2.0;
-                    InputConstants.grabOrReleaseMouse(window, InputConstants.CURSOR_DISABLED, xpos, ypos);
-                }
-                float yaw1 = (float) (Mod.yaw + i / 8.0D);
-                float pitch1 = (float) (Mod.pitch + j / 8.0D);
-                Mod.yaw = yaw1;
-                Mod.pitch = pitch1;
+        if (Mod.enabled && cameraEntity != null && minecraft.player instanceof LocalPlayer) {
+            if (Mod.moving) {
+                Mod.yaw += (float) (i / 8.0D);
+                Mod.pitch += (float) (j / 8.0D);
                 if (Math.abs(Mod.pitch) > 90.0F) {
                     float yaw = Mod.yaw;
                     float pitch = (Mod.pitch > 0.0F) ? 90.0F : -90.0F;
@@ -140,24 +112,11 @@ public class MouseMixin {
 
                 Mod.crosshairTarget = null;
             } else {
-                if (lastX != null && lastY != null) {
-                    InputConstants.grabOrReleaseMouse(
-                            minecraft.getWindow(),
-                            GLFW.GLFW_CURSOR_HIDDEN,
-                            lastX,
-                            lastY
-                    );
-                    xpos = lastX;
-                    ypos = lastY;
-                    lastX = null;
-                    lastY = null;
-                }
-
                 Vector2d res = new Vector2d(window.getWidth(), window.getHeight());
                 double aspect = res.x / res.y;
-                Vector2d coords = new Vector2d(mouse.xpos(), mouse.ypos()).div(res).mul(2.0).sub(new Vector2d(1.0));
-                double fov2 =
-                        Math.toRadians(((GameRendererAccessor) renderer).callGetFov(camera, tickDelta, true)) / 2.0;
+                Vector2d coords = new Vector2d(xpos, ypos).div(res).mul(2.0).sub(new Vector2d(1.0));
+                double fov2 = Math.toRadians(renderer.getFov(camera, tickDelta, true)) / 2.0;
+
                 coords.x *= aspect;
                 coords.y = -coords.y;
                 Vector2d offsets = coords.mul(Math.tan(fov2));
@@ -169,6 +128,16 @@ public class MouseMixin {
 
                 Vec3 start = camera.position();
                 Vec3 end = start.add(rayDir.scale(renderer.getDepthFar()));
+
+                // if we're elytra flying/sprint swimming, only target blocks in front of the player so we don't get caught on algae and shit
+                if (minecraft.player.isFallFlying() || minecraft.player.isSwimming()) {
+                    System.out.println("Swimming!");
+                    Vec3 eye = cameraEntity.getEyePosition(tickDelta);
+                    start = start.add(rayDir.scale(
+                            (start.distanceToSqr(end) + start.distanceToSqr(eye) - eye.distanceToSqr(end))
+                                    / (2 * start.distanceTo(end)) + 1
+                    ));
+                }
 
                 AABB box = cameraEntity
                         .getBoundingBox()
@@ -213,10 +182,30 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/ScrollWheelHandler;getNextScrollWheelSelection(DII)I")
     )
     private int scrollCycling(double amount, int selectedIndex, int total) {
-        if (Mod.enabled && Config.GSON.instance().scrollWheelZoom) {
+        if (Mod.enabled && Config.GSON.instance().scrollWheelZoom && !Util.hotbarHovered()) {
             Mod.zoom = Math.max(0.0f, Mod.zoom - (float) amount * 0.2f);
             return selectedIndex;
         }
         return ScrollWheelHandler.getNextScrollWheelSelection(amount, selectedIndex, total);
+    }
+
+    @Redirect(
+            method = "onButton",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;set(Lcom/mojang/blaze3d/platform/InputConstants$Key;Z)V")
+    )
+    private void beforeSetKeyMapping(InputConstants.Key key, boolean pressed) {
+        if (Mod.enabled && !Util.hotbarHovered()) {
+            KeyMapping.set(key, pressed);
+        }
+    }
+
+    @Redirect(
+            method = "onButton",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;click(Lcom/mojang/blaze3d/platform/InputConstants$Key;)V")
+    )
+    private void beforeSetKeyMapping(InputConstants.Key key) {
+        if (Mod.enabled && !Util.hotbarHovered()) {
+            KeyMapping.click(key);
+        }
     }
 }
