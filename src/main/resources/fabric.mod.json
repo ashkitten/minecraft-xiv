@@ -1,16 +1,18 @@
 {
   "schemaVersion": 1,
-  "id": "minecraftxiv",
-  "version": "${version}",
-  "name": "Minecraft XIV",
-  "description": "Changes Minecraft's third-person controls to be more like FFXIV.",
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
   "authors": [
-    "ashkitten"
+    "${mod_author}"
   ],
+  "license": "${mod_license}",
   "contact": {
-    "email": "example@thisismyactual.email"
+    "email": "example@thisismyactual.email",
+    "issues": "https://github.com/${github}/issues",
+    "sources": "https://github.com/${github}"
   },
-  "license": "MIT",
   "icon": "assets/minecraftxiv/icon.png",
   "environment": "*",
   "entrypoints": {
@@ -24,14 +26,10 @@
       "wtf.kity.minecraftxiv.config.Gui"
     ]
   },
-  "mixins": [
-    "minecraftxiv.mixins.json"
-  ],
-  "accessWidener" : "minecraftxiv.classtweaker",
   "depends": {
-    "fabricloader": ">=0.18.4",
-    "minecraft": "~1.20.1",
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
     "fabric-api": "*",
-    "yet_another_config_lib_v3": ">=3.6.6"
+    "yet_another_config_lib_v3": ">=${yacl_version}"
   }
 }

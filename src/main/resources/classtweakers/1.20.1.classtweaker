@@ -1,4 +1,4 @@
-classTweaker v1 named
+accessWidener v1 named
 
 accessible method net/minecraft/client/Camera getMaxZoom (D)D
 
