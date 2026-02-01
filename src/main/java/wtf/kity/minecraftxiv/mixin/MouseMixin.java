@@ -9,12 +9,12 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
-import net.minecraft.client.ScrollWheelHandler;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.tutorial.Tutorial;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -83,17 +83,17 @@ public class MouseMixin {
         original.call(handle, xpos, ypos);
     }
 
-    @Inject(
+    @Redirect(
             method = "turnPlayer",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onMouse(DD)V")
     )
-    private void updateMouseA(
-            double timeDelta, CallbackInfo ci, @Local(ordinal = 1) double i, @Local(ordinal = 2) double j
-    ) {
+    private void updateMouseA(Tutorial instance, double i, double j) {
+        instance.onMouse(i, j);
+
         GameRenderer renderer = minecraft.gameRenderer;
         Window window = minecraft.getWindow();
         Camera camera = renderer.getMainCamera();
-        float tickDelta = camera.getPartialTickTime();
+        float tickDelta = minecraft.getDeltaFrameTime();
         Entity cameraEntity = minecraft.getCameraEntity();
 
         if (Mod.enabled && cameraEntity != null && minecraft.player instanceof LocalPlayer) {
@@ -120,13 +120,13 @@ public class MouseMixin {
                 coords.x *= aspect;
                 coords.y = -coords.y;
                 Vector2d offsets = coords.mul(Math.tan(fov2));
-                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, -1.0));
-                Vector3d right = camera.rotation().transform(new Vector3d(1.0, 0.0, 0.0));
+                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, 1.0));
+                Vector3d right = camera.rotation().transform(new Vector3d(-1.0, 0.0, 0.0));
                 Vector3d up = camera.rotation().transform(new Vector3d(0.0, 1.0, 0.0));
                 Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
                 Vec3 rayDir = new Vec3(dir.x, dir.y, dir.z);
 
-                Vec3 start = camera.position();
+                Vec3 start = camera.getPosition();
                 Vec3 end = start.add(rayDir.scale(renderer.getDepthFar()));
 
                 // if we're elytra flying/sprint swimming, only target blocks in front of the player so we don't get caught on algae and shit
@@ -179,18 +179,18 @@ public class MouseMixin {
 
     @Redirect(
             method = "onScroll",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/ScrollWheelHandler;getNextScrollWheelSelection(DII)I")
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V")
     )
-    private int scrollCycling(double amount, int selectedIndex, int total) {
+    private void scrollCycling(Inventory instance, double d) {
         if (Mod.enabled && Config.GSON.instance().scrollWheelZoom && !Util.hotbarHovered()) {
-            Mod.zoom = Math.max(0.0f, Mod.zoom - (float) amount * 0.2f);
-            return selectedIndex;
+            Mod.zoom = Math.max(0.0f, Mod.zoom - (float) d * 0.2f);
+            return;
         }
-        return ScrollWheelHandler.getNextScrollWheelSelection(amount, selectedIndex, total);
+        instance.swapPaint(d);
     }
 
     @Redirect(
-            method = "onButton",
+            method = "onPress",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;set(Lcom/mojang/blaze3d/platform/InputConstants$Key;Z)V")
     )
     private void beforeSetKeyMapping(InputConstants.Key key, boolean pressed) {
@@ -200,7 +200,7 @@ public class MouseMixin {
     }
 
     @Redirect(
-            method = "onButton",
+            method = "onPress",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;click(Lcom/mojang/blaze3d/platform/InputConstants$Key;)V")
     )
     private void beforeSetKeyMapping(InputConstants.Key key) {

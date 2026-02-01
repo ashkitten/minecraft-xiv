@@ -9,10 +9,8 @@ import dev.isxander.yacl3.api.controller.TickBoxControllerBuilder;
 import dev.isxander.yacl3.api.utils.Dimension;
 import dev.isxander.yacl3.gui.AbstractWidget;
 import dev.isxander.yacl3.gui.YACLScreen;
+import dev.isxander.yacl3.gui.YACLTooltipPositioner;
 import dev.isxander.yacl3.gui.controllers.TickBoxController;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,12 +19,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetTooltipHolder;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
-import wtf.kity.minecraftxiv.ClientInit;
 
 public class ToggleableController<T> implements Controller<T> {
     public final Option<Boolean> enabled;
@@ -73,11 +69,12 @@ public class ToggleableController<T> implements Controller<T> {
         private final ToggleableController<T> control;
         private final TickBoxController.TickBoxControllerElement tickBox;
         private final AbstractWidget inner;
-        private final WidgetTooltipHolder tooltip = new WidgetTooltipHolder();
+        private YACLScreen screen;
 
         public ToggleableControllerWidget(ToggleableController<T> control, YACLScreen screen, Dimension<Integer> dim) {
             super(dim);
             this.control = control;
+            this.screen = screen;
             this.tickBox = (TickBoxController.TickBoxControllerElement) control.enabled
                     .controller()
                     .provideWidget(screen, dim);
@@ -89,14 +86,10 @@ public class ToggleableController<T> implements Controller<T> {
         public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
             this.tickBox.render(graphics, mouseX, mouseY, delta);
             this.inner.render(graphics, mouseX, mouseY, delta);
-            this.tooltip.set(Tooltip.create(this.control.tickBoxTooltipFunction.get()));
-            this.tooltip.refreshTooltipForNextRenderPass(
-                    graphics,
-                    mouseX,
-                    mouseY,
-                    this.tickBox.isHovered(),
-                    this.tickBox.isFocused(),
-                    this.tickBox.getRectangle()
+            screen.setTooltipForNextRenderPass(
+                    Tooltip.create(this.control.tickBoxTooltipFunction.get()),
+                    new YACLTooltipPositioner(this.tickBox),
+                    this.tickBox.isHovered()
             );
         }
 
@@ -167,36 +160,6 @@ public class ToggleableController<T> implements Controller<T> {
         public void updateNarration(NarrationElementOutput builder) {
             this.tickBox.updateNarration(builder);
             this.inner.updateNarration(builder);
-        }
-
-        @Override
-        public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean doubleClick) {
-            return ContainerEventHandler.super.mouseClicked(mouseButtonEvent, doubleClick);
-        }
-
-        @Override
-        public boolean mouseReleased(@NotNull MouseButtonEvent mouseButtonEvent) {
-            return ContainerEventHandler.super.mouseReleased(mouseButtonEvent);
-        }
-
-        @Override
-        public boolean mouseDragged(@NotNull MouseButtonEvent mouseButtonEvent, double dx, double dy) {
-            return ContainerEventHandler.super.mouseDragged(mouseButtonEvent, dx, dy);
-        }
-
-        @Override
-        public boolean keyPressed(@NotNull KeyEvent keyEvent) {
-            return ContainerEventHandler.super.keyPressed(keyEvent);
-        }
-
-        @Override
-        public boolean keyReleased(@NotNull KeyEvent keyEvent) {
-            return ContainerEventHandler.super.keyReleased(keyEvent);
-        }
-
-        @Override
-        public boolean charTyped(@NotNull CharacterEvent characterEvent) {
-            return ContainerEventHandler.super.charTyped(characterEvent);
         }
     }
 }

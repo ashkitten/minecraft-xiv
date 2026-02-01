@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.mod.Mod;
+import wtf.kity.minecraftxiv.util.Util;
 
 @Mixin(Gui.class)
 public abstract class InGameHudMixin {
@@ -24,7 +25,10 @@ public abstract class InGameHudMixin {
     private Minecraft minecraft;
 
     @Shadow
-    abstract void renderSlot(GuiGraphics graphics, int x, int y, DeltaTracker deltaTracker, Player player, ItemStack itemStack, int seed);
+    protected abstract void renderSlot(GuiGraphics graphics, int x, int y, float tickDelta, Player player, ItemStack itemStack, int seed);
+
+    @Shadow
+    public abstract void tick(boolean bl);
 
     @Redirect(
             method = "renderCrosshair",
@@ -41,48 +45,51 @@ public abstract class InGameHudMixin {
     }
 
     @Inject(method = "renderCrosshair", at = @At("HEAD"))
-    private void crosshairPre(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private void crosshairPre(GuiGraphics context, CallbackInfo ci) {
         if (Mod.enabled) {
             double scaleFactor = minecraft.getWindow().getGuiScale();
             MouseHandler mouse = minecraft.mouseHandler;
 
-            //Using RenderSystem on purpose.
-            //The f3 "axes" debug cursor calls RenderSystem directly instead of using matrix stack.
-            context.pose().pushMatrix();
+            context.pose().pushPose();
             context.pose().translate(
                     (float) (-context.guiWidth() / 2d + mouse.xpos() / scaleFactor),
-                    (float) (-context.guiHeight() / 2f + mouse.ypos() / scaleFactor)
+                    (float) (-context.guiHeight() / 2f + mouse.ypos() / scaleFactor),
+                    0.0f
             );
         }
     }
 
     @Inject(method = "renderCrosshair", at = @At("RETURN"))
-    private void crosshairPost(GuiGraphics context, DeltaTracker tickCounter, CallbackInfo ci) {
+    private void crosshairPost(GuiGraphics context, CallbackInfo ci) {
         if (Mod.enabled) {
-            context.pose().popMatrix();
+            context.pose().popPose();
         }
     }
 
     @Redirect(
-        method = "renderItemHotbar",
+        method = "renderHotbar",
         at = @At(
-            value = "INVOKE", target = "Lnet/minecraft/client/gui/Gui;renderSlot(Lnet/minecraft/client/gui/GuiGraphics;IILnet/minecraft/client/DeltaTracker;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/item/ItemStack;I)V"
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/Gui;renderSlot(Lnet/minecraft/client/gui/GuiGraphics;IIFLnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/item/ItemStack;I)V",
+            ordinal = 0
         )
     )
-    private void renderSlot(Gui instance, GuiGraphics graphics, int x, int y, DeltaTracker deltaTracker, Player player, ItemStack itemStack, int seed, @Local(name = "i") int i) {
+    private void renderSlot(Gui instance, GuiGraphics graphics, int x, int y, float tickDelta, Player player, ItemStack itemStack, int seed, @Local(name = "m") int m) {
         if (Mod.enabled) {
             MouseHandler mouse = minecraft.mouseHandler;
 
-            ScreenRectangle rect = new ScreenRectangle(x, y, 16, 16);
-            if (rect.containsPoint((int) mouse.getScaledXPos(this.minecraft.getWindow()), (int) mouse.getScaledYPos(this.minecraft.getWindow()))) {
-                graphics.renderOutline(x, y, 16, 16, 0xFFFFFFFF);
+            ScreenRectangle rect = new ScreenRectangle(x - 2, y - 2, 20, 20);
+            double xpos = mouse.xpos / this.minecraft.getWindow().getGuiScale();
+            double ypos = mouse.ypos / this.minecraft.getWindow().getGuiScale();
+            if (Util.rectContainsPoint(rect, xpos, ypos)) {
+                graphics.renderOutline(x - 2, y - 2, 20, 20, 0xFFFFFFFF);
 
                 if (mouse.isLeftPressed()) {
-                    player.getInventory().setSelectedSlot(i);
+                    player.getInventory().selected = m;
                 }
             }
         }
 
-        renderSlot(graphics, x, y, deltaTracker, player, itemStack, seed);
+        renderSlot(graphics, x, y, tickDelta, player, itemStack, seed);
     }
 }

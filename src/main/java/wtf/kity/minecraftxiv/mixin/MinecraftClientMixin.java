@@ -104,7 +104,7 @@ public abstract class MinecraftClientMixin {
                                             && entity.isAttackable()
                                             && !entity.isInvisibleTo(player)
                                             && entity.level().clip(new ClipContext(
-                                                    client.gameRenderer.getMainCamera().position(),
+                                                    client.gameRenderer.getMainCamera().getPosition(),
                                                     entity.position(),
                                                     ClipContext.Block.OUTLINE,
                                                     ClipContext.Fluid.NONE,
@@ -123,7 +123,7 @@ public abstract class MinecraftClientMixin {
                 }
             } else if (Mod.moving) {
                 Mod.moving = false;
-                GLFW.glfwSetCursorPos(window.handle(), lastX, lastY);
+                GLFW.glfwSetCursorPos(window.getWindow(), lastX, lastY);
                 mouse.xpos = lastX;
                 mouse.ypos = lastY;
             }
@@ -142,8 +142,8 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "disconnectFromWorld(Lnet/minecraft/network/chat/Component;)V", at = @At("HEAD"))
-    public void disconnectPre(Component reasonText, CallbackInfo ci) {
-        ClientInit.capabilities = null;
+    @Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At("HEAD"))
+    public void clearLevel(CallbackInfo ci) {
+        ClientInit.setCapabilities(null);
     }
 }

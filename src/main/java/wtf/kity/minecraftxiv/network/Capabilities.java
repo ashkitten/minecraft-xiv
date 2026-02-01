@@ -1,26 +1,29 @@
 package wtf.kity.minecraftxiv.network;
 
 import com.google.gson.*;
+import net.fabricmc.fabric.api.networking.v1.FabricPacket;
+import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements CustomPacketPayload {
-    public static final Type<Capabilities> ID = new Type<>(Identifier.fromNamespaceAndPath("minecraftxiv", "capabilities"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, Capabilities> CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL,
-            Capabilities::targetFromCamera,
-            ByteBufCodecs.BOOL,
-            Capabilities::unlimitedReach,
-            Capabilities::new
-    );
+public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements FabricPacket {
+    public static final PacketType<Capabilities> ID = PacketType.create(new ResourceLocation("minecraftxiv", "capabilities"), Capabilities::new);
+
+    public Capabilities(FriendlyByteBuf buf) {
+        this(buf.readBoolean(), buf.readBoolean());
+    }
+
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeBoolean(targetFromCamera);
+        buf.writeBoolean(unlimitedReach);
+    }
 
     public static Capabilities all() {
         return new Capabilities(true, true);
@@ -47,7 +50,7 @@ public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) imp
     }
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public PacketType<? extends FabricPacket> getType() {
         return ID;
     }
 

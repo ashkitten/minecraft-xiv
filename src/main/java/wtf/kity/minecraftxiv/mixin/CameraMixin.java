@@ -40,23 +40,23 @@ public abstract class CameraMixin {
 
     @Redirect(
             method = "setup",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(F)F", ordinal = 0)
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(D)D", ordinal = 0)
     )
-    public float getMaxZoom(Camera instance, float cameraDist) {
+    public double getMaxZoom(Camera instance, double cameraDist) {
         if (Mod.enabled) {
             this.setRotation(Mod.yaw, Mod.pitch);
             Vector3f offset = new Vector3f(0, 0, zoom).rotate(instance.rotation());
-            Vec3 pos = new Vec3(instance.position().x + offset.x, instance.position().y + offset.y, instance.position().z + offset.z);
-            if (zoom != cameraDist * Mod.zoom || !instance.entity().level().isEmptyBlock(BlockPos.containing(pos))) {
-                zoom = cameraDist * Mod.zoom;
+            Vec3 pos = new Vec3(instance.getPosition().x + offset.x, instance.getPosition().y + offset.y, instance.getPosition().z + offset.z);
+            if (zoom != cameraDist * Mod.zoom || !instance.getEntity().level().isEmptyBlock(BlockPos.containing(pos))) {
+                zoom = (float) cameraDist * Mod.zoom;
                 offset = new Vector3f(0, 0, zoom).rotate(instance.rotation());
-                pos = new Vec3(instance.position().x + offset.x, instance.position().y + offset.y, instance.position().z + offset.z);
-                if (!instance.entity().level().isEmptyBlock(BlockPos.containing(pos))) {
-                    zoom = instance.getMaxZoom(cameraDist * Mod.zoom);
+                pos = new Vec3(instance.getPosition().x + offset.x, instance.getPosition().y + offset.y, instance.getPosition().z + offset.z);
+                if (!instance.getEntity().level().isEmptyBlock(BlockPos.containing(pos))) {
+                    zoom = (float) instance.getMaxZoom(cameraDist * Mod.zoom);
                 }
             }
         } else {
-            zoom = instance.getMaxZoom(cameraDist);
+            zoom = (float) instance.getMaxZoom(cameraDist);
         }
         return zoom;
     }

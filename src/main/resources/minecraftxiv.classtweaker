@@ -1,9 +1,11 @@
-classTweaker v1 official
+classTweaker v1 named
 
-accessible method net/minecraft/client/Camera getMaxZoom (F)F
+accessible method net/minecraft/client/Camera getMaxZoom (D)D
 
 accessible field net/minecraft/client/MouseHandler xpos D
 accessible field net/minecraft/client/MouseHandler ypos D
 accessible method net/minecraft/client/MouseHandler onMove (JDD)V
 
-accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F
+accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)D
+
+mutable field net/minecraft/server/network/ServerGamePacketListenerImpl MAX_INTERACTION_DISTANCE D

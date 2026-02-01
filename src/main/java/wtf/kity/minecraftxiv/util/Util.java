@@ -22,8 +22,8 @@ public class Util {
         Window window = minecraft.getWindow();
         MouseHandler mouse = minecraft.mouseHandler;
 
-        int x = (int) mouse.getScaledXPos(window);
-        int y = (int) mouse.getScaledYPos(window);
+        double x = mouse.xpos / window.getGuiScale();
+        double y = mouse.ypos / window.getGuiScale();
         int screenCenter = window.getGuiScaledWidth() / 2;
         int hotbarWidth = 182;
         int hotbarHeight = 24;
@@ -32,6 +32,10 @@ public class Util {
                 hotbarWidth,
                 hotbarHeight
         );
-        return rect.containsPoint(x, y);
+        return rectContainsPoint(rect, x, y);
+    }
+
+    public static boolean rectContainsPoint(ScreenRectangle rectangle, double x, double y) {
+        return x >= rectangle.left() && x < rectangle.right() && y >= rectangle.top() && y < rectangle.bottom();
     }
 }
