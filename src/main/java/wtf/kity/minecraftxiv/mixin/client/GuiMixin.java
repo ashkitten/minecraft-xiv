@@ -79,7 +79,7 @@ public abstract class GuiMixin {
             Gui instance,
             GuiGraphics graphics, int x, int y, float delta, Player player, ItemStack itemStack, int seed,
             Operation<Void> original,
-            @Local(name = "m") int i
+            @Local(ordinal = 4) int i
     ) {
     *///? } else {
     @WrapOperation(
@@ -94,7 +94,7 @@ public abstract class GuiMixin {
         Gui instance,
         GuiGraphics graphics, int x, int y, DeltaTracker delta, Player player, ItemStack itemStack, int seed,
         Operation<Void> original,
-        @Local(name = "i") int i
+        @Local(ordinal = 4) int i
     ) {
     //? }
         original.call(instance, graphics, x, y, delta, player, itemStack, seed);

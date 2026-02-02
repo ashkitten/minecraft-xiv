@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "2.3.0"
     id("com.google.devtools.ksp") version "2.3.4"
     id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22"
+    id("me.modmuss50.mod-publish-plugin")
 }
 
 fun prop(name: String, consumer: (prop: String) -> Unit) {
@@ -12,8 +13,19 @@ fun prop(name: String, consumer: (prop: String) -> Unit) {
 }
 
 val minecraft = property("minecraft_version") as String
-val minecraftCompat = property("minecraft_compat") as String
+val minecraftDep = property("minecraft_dependency") as String
 val yaclVersion = property("yacl_version") as String
+
+val isFabric = modstitch.isLoom
+val isNeoforge = modstitch.isModDevGradleRegular
+val isForge = modstitch.isModDevGradleLegacy
+val isForgeLike = modstitch.isModDevGradle
+val loader = when {
+    isFabric -> "fabric"
+    isNeoforge -> "neoforge"
+    isForge -> "forge"
+    else -> error("Unknown loader")
+}
 
 modstitch {
     this.minecraftVersion = minecraft
@@ -31,13 +43,13 @@ modstitch {
     }
 
     metadata {
-        modId = "minecraft-xiv"
-        modName = "Minecraft XIV"
-        modDescription = "Changes Minecraft's third-person controls to be more like FFXIV."
-        modVersion = "1.4.0"
-        modGroup = "wtf.kity"
-        modAuthor = "ashkitten"
-        modLicense = "MIT"
+        modId = property("mod_id") as String
+        modName = property("mod_name") as String
+        modDescription = property("mod_description") as String
+        modVersion = property("mod_version") as String
+        modGroup = property("mod_group") as String
+        modAuthor = property("mod_author") as String
+        modLicense = property("mod_license") as String
     }
 
     // Fabric Loom (Fabric)
@@ -59,11 +71,11 @@ modstitch {
                 "mod_description" to metadata.modDescription.get(),
                 "mod_author" to metadata.modAuthor.get(),
                 "github" to "ashkitten/minecraft-xiv",
-                "mod_license" to "LGPL-3.0",
+                "mod_license" to metadata.modLicense.get(),
                 "classtweaker_file" to classTweaker,
                 "loader_version" to fabricLoaderVersion.get(),
                 "java_version" to modstitch.javaVersion.get(),
-                "minecraft_version" to minecraftCompat,
+                "minecraft_version" to minecraftDep,
                 "yacl_version" to yaclVersion,
             )
 
@@ -137,4 +149,48 @@ dependencies {
 
     impl("dev.isxander:yet-another-config-lib:${property("yacl_version")}")
     impl("com.terraformersmc:modmenu:${property("modmenu_version")}")
+}
+
+publishMods {
+    from(rootProject.publishMods)
+    dryRun = rootProject.publishMods.dryRun
+
+    file = modstitch.finalJarTask.flatMap { it.archiveFile }
+
+    displayName = "${modstitch.metadata.modVersion.get()} for $loader $minecraft"
+    modLoaders.add(loader)
+
+    changelog = rootProject.file("CHANGELOG.md").readText()
+
+    type = when {
+        "alpha" in modstitch.metadata.modVersion.get() -> ALPHA
+        "beta" in modstitch.metadata.modVersion.get() -> BETA
+        else -> STABLE
+    }
+
+    fun versionList(prop: String) = findProperty(prop)?.toString()
+        ?.split(',')
+        ?.map { it.trim() }
+        ?: emptyList()
+
+    // modrinth and curseforge use different formats for snapshots. this can be expressed globally
+    val stableCompat = versionList("stable_compat")
+
+    modrinth {
+        accessToken = System.getenv("MODRINTH_TOKEN")
+
+        projectId = "fNaJhObx"
+
+        minecraftVersions.addAll(stableCompat)
+        minecraftVersions.addAll(versionList("modrinth_compat"))
+
+        announcementTitle = "Download $minecraft for ${loader.replaceFirstChar { it.uppercase() }} from Modrinth"
+
+        requires { slug.set("yacl") }
+
+        if (modstitch.isLoom) {
+            requires { slug.set("fabric-api") }
+            optional { slug.set("modmenu") }
+        }
+    }
 }

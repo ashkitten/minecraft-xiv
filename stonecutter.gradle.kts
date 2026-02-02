@@ -1,5 +1,6 @@
 plugins {
     id("dev.kikugie.stonecutter")
+    id("me.modmuss50.mod-publish-plugin") version "0.8.4"
 }
 
 stonecutter active "26.1.0-fabric"
@@ -14,3 +15,5 @@ allprojects {
         maven("https://maven.terraformersmc.com/")
     }
 }
+
+version = property("mod_version") as String
