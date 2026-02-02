@@ -24,8 +24,12 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
-//? >26
+//? >26 {
 import net.minecraft.client.gui.components.WidgetTooltipHolder;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+//? }
 
 public class ToggleableController<T> implements Controller<T> {
     public final Option<Boolean> enabled;
@@ -178,5 +182,37 @@ public class ToggleableController<T> implements Controller<T> {
             this.tickBox.updateNarration(builder);
             this.inner.updateNarration(builder);
         }
+
+        //? >26 {
+        @Override
+        public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean doubleClick) {
+            return ContainerEventHandler.super.mouseClicked(mouseButtonEvent, doubleClick);
+        }
+
+        @Override
+        public boolean mouseReleased(@NotNull MouseButtonEvent mouseButtonEvent) {
+            return ContainerEventHandler.super.mouseReleased(mouseButtonEvent);
+        }
+
+        @Override
+        public boolean mouseDragged(@NotNull MouseButtonEvent mouseButtonEvent, double dx, double dy) {
+            return ContainerEventHandler.super.mouseDragged(mouseButtonEvent, dx, dy);
+        }
+
+        @Override
+        public boolean keyPressed(@NotNull KeyEvent keyEvent) {
+            return ContainerEventHandler.super.keyPressed(keyEvent);
+        }
+
+        @Override
+        public boolean keyReleased(@NotNull KeyEvent keyEvent) {
+            return ContainerEventHandler.super.keyReleased(keyEvent);
+        }
+
+        @Override
+        public boolean charTyped(@NotNull CharacterEvent characterEvent) {
+            return ContainerEventHandler.super.charTyped(characterEvent);
+        }
+        //? }
     }
 }

@@ -1,10 +1,7 @@
 package wtf.kity.minecraftxiv;
 
-
 import dev.kikugie.fletching_table.annotation.fabric.Entrypoint;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -19,8 +16,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import wtf.kity.minecraftxiv.config.Config;
@@ -36,10 +31,11 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 //? >=1.21.9
 import net.minecraft.resources.Identifier;
 
-//? <26
-//import net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry;
-
-//? >26 {
+//? <26 {
+/*import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Mth;
+import net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry;
+*///? } else {
 import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionLevel;
 //? }
@@ -181,7 +177,7 @@ public class ClientInit implements ClientModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(Capabilities.ID, Capabilities.CODEC);
         ClientPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
         //? }
-                setCapabilities(payload);
+            setCapabilities(payload);
             notifyCapabilityListeners();
         });
 
@@ -189,10 +185,13 @@ public class ClientInit implements ClientModInitializer {
 
         // Server side stuff
 
-        ServerLifecycleEvents.SERVER_STARTED.register((minecraftServer) -> setCapabilities(Capabilities.none()));
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> setCapabilities(Capabilities.none()));
 
         ServerPlayConnectionEvents.JOIN.register((networkHandler, packetSender, minecraftServer) -> {
             if (Util.hasPermissions(networkHandler.player)) {
+                if (networkHandler.player.isLocalPlayer()) {
+                    setCapabilities(Capabilities.load());
+                }
                 packetSender.sendPacket(capabilities);
             }
         });
@@ -206,9 +205,7 @@ public class ClientInit implements ClientModInitializer {
             ServerPlayer player = context.player();
             MinecraftServer server = context.server();
         //? }
-            if (!Util.hasPermissions(player)) {
-                return;
-            }
+            if (!Util.hasPermissions(player)) return;
 
             if (!payload.equals(capabilities)) {
                 setCapabilities(payload);

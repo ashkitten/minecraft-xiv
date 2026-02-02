@@ -65,16 +65,7 @@ public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderStat
     )
     public void render(
             SubmitNodeCollector instance,
-            Model<? super SS> model,
-            SS state,
-            PoseStack matrices,
-            RenderType renderLayer,
-            int light,
-            int overlay,
-            int tintedColor,
-            @Nullable TextureAtlasSprite sprite,
-            int outlineColor,
-            @Nullable CrumblingOverlay crumblingOverlay,
+            Model<? super SS> model, SS state, PoseStack matrices, RenderType renderLayer, int light, int overlay, int tintedColor, @Nullable TextureAtlasSprite sprite, int outlineColor, @Nullable CrumblingOverlay crumblingOverlay,
             @Local(argsOnly = true) S livingEntityRenderState
     ) {
 //? }
@@ -98,7 +89,7 @@ public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderStat
             // Same as spectator mode (ref. LivingEntityRenderer#getRenderLayer)
             //? <26 {
             /*vertexConsumer = multiBufferSource.getBuffer(RenderType.entityTranslucentCull(getTextureLocation(livingEntity)));
-            h = 0.15f;
+            k = 0.15f;
             *///? } else {
             renderLayer = RenderTypes.itemEntityTranslucentCull(this.getTextureLocation((S) state));
             tintedColor = 0x26FFFFFF;
