@@ -15,17 +15,6 @@
   },
   "icon": "assets/minecraftxiv/icon.png",
   "environment": "*",
-  "entrypoints": {
-    "client": [
-      "wtf.kity.minecraftxiv.ClientInit"
-    ],
-    "server": [
-      "wtf.kity.minecraftxiv.ServerInit"
-    ],
-    "modmenu": [
-      "wtf.kity.minecraftxiv.config.Gui"
-    ]
-  },
   "depends": {
     "fabricloader": ">=${loader_version}",
     "minecraft": "~${minecraft_version}",

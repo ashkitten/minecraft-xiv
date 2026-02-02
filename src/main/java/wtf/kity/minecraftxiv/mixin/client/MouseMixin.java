@@ -1,20 +1,15 @@
-package wtf.kity.minecraftxiv.mixin;
+package wtf.kity.minecraftxiv.mixin.client;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
-import net.minecraft.client.Camera;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
+import net.minecraft.client.*;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.tutorial.Tutorial;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -31,6 +26,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
+
+//? <26
+//import net.minecraft.world.entity.player.Inventory;
 
 @Mixin(MouseHandler.class)
 public class MouseMixin {
@@ -87,19 +85,22 @@ public class MouseMixin {
             method = "turnPlayer",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onMouse(DD)V")
     )
-    private void updateMouseA(Tutorial instance, double i, double j) {
-        instance.onMouse(i, j);
+    private void onMouse(Tutorial instance, double x, double y) {
+        //? <26 {
+        /*float tickDelta = minecraft.getDeltaFrameTime();
+        *///? } else {
+        float tickDelta = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true);
+        //? }
 
         GameRenderer renderer = minecraft.gameRenderer;
         Window window = minecraft.getWindow();
         Camera camera = renderer.getMainCamera();
-        float tickDelta = minecraft.getDeltaFrameTime();
         Entity cameraEntity = minecraft.getCameraEntity();
 
         if (Mod.enabled && cameraEntity != null && minecraft.player instanceof LocalPlayer) {
             if (Mod.moving) {
-                Mod.yaw += (float) (i / 8.0D);
-                Mod.pitch += (float) (j / 8.0D);
+                Mod.yaw += (float) (x / 8.0D);
+                Mod.pitch += (float) (y / 8.0D);
                 if (Math.abs(Mod.pitch) > 90.0F) {
                     float yaw = Mod.yaw;
                     float pitch = (Mod.pitch > 0.0F) ? 90.0F : -90.0F;
@@ -115,24 +116,28 @@ public class MouseMixin {
                 Vector2d res = new Vector2d(window.getWidth(), window.getHeight());
                 double aspect = res.x / res.y;
                 Vector2d coords = new Vector2d(xpos, ypos).div(res).mul(2.0).sub(new Vector2d(1.0));
-                double fov2 = Math.toRadians(renderer.getFov(camera, tickDelta, true)) / 2.0;
+                double fov2 = Math.toRadians(renderer.getFov(camera, (float) tickDelta, true)) / 2.0;
 
                 coords.x *= aspect;
                 coords.y = -coords.y;
                 Vector2d offsets = coords.mul(Math.tan(fov2));
-                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, 1.0));
-                Vector3d right = camera.rotation().transform(new Vector3d(-1.0, 0.0, 0.0));
+                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, /*?>26>>+'-'*/-1.0));
+                Vector3d right = camera.rotation().transform(new Vector3d(/*?<26>>+'-'*//*-*/1.0, 0.0, 0.0));
                 Vector3d up = camera.rotation().transform(new Vector3d(0.0, 1.0, 0.0));
                 Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
                 Vec3 rayDir = new Vec3(dir.x, dir.y, dir.z);
 
-                Vec3 start = camera.getPosition();
+                //? <26 {
+                /*Vec3 start = camera.getPosition();
+                *///? } else {
+                Vec3 start = camera.position();
+                //? }
                 Vec3 end = start.add(rayDir.scale(renderer.getDepthFar()));
 
                 // if we're elytra flying/sprint swimming, only target blocks in front of the player so we don't get caught on algae and shit
                 if (minecraft.player.isFallFlying() || minecraft.player.isSwimming()) {
                     System.out.println("Swimming!");
-                    Vec3 eye = cameraEntity.getEyePosition(tickDelta);
+                    Vec3 eye = cameraEntity.getEyePosition((float) tickDelta);
                     start = start.add(rayDir.scale(
                             (start.distanceToSqr(end) + start.distanceToSqr(eye) - eye.distanceToSqr(end))
                                     / (2 * start.distanceTo(end)) + 1
@@ -171,7 +176,7 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"),
             cancellable = true
     )
-    private void updateMouseB(CallbackInfo info) {
+    private void turn(CallbackInfo info) {
         if (Mod.enabled) {
             info.cancel();
         }
@@ -179,18 +184,35 @@ public class MouseMixin {
 
     @Redirect(
             method = "onScroll",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V")
+    //? <26 {
+            /*at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V")
     )
-    private void scrollCycling(Inventory instance, double d) {
+    private void scrollCycling(Inventory instance, double amount) {
+    *///? } else {
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/ScrollWheelHandler;getNextScrollWheelSelection(DII)I")
+        )
+    private int scrollCycling(double amount, int selectedIndex, int total) {
+    //? }
         if (Mod.enabled && Config.GSON.instance().scrollWheelZoom && !Util.hotbarHovered()) {
-            Mod.zoom = Math.max(0.0f, Mod.zoom - (float) d * 0.2f);
-            return;
+            Mod.zoom = Math.max(0.0f, Mod.zoom - (float) amount * 0.2f);
+
+    //? <26 {
+            /*return;
         }
-        instance.swapPaint(d);
+        instance.swapPaint(amount);
+    *///? } else {
+            return selectedIndex;
+        }
+        return ScrollWheelHandler.getNextScrollWheelSelection(amount, selectedIndex, total);
+    //? }
     }
 
     @Redirect(
-            method = "onPress",
+            //? <26 {
+            /*method = "onPress",
+            *///? } else {
+            method = "onButton",
+            //? }
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;set(Lcom/mojang/blaze3d/platform/InputConstants$Key;Z)V")
     )
     private void beforeSetKeyMapping(InputConstants.Key key, boolean pressed) {
@@ -200,7 +222,11 @@ public class MouseMixin {
     }
 
     @Redirect(
-            method = "onPress",
+            //? <26 {
+            /*method = "onPress",
+            *///? } else {
+            method = "onButton",
+            //? }
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;click(Lcom/mojang/blaze3d/platform/InputConstants$Key;)V")
     )
     private void beforeSetKeyMapping(InputConstants.Key key) {

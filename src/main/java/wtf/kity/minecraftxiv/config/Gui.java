@@ -6,17 +6,23 @@ import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import dev.isxander.yacl3.gui.YACLScreen;
 import dev.isxander.yacl3.gui.controllers.LabelController;
+import dev.kikugie.fletching_table.annotation.fabric.Entrypoint;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+//? <26 {
+/*import net.minecraft.Util;
+*///? } else {
+import net.minecraft.util.Util;
+//? }
 import wtf.kity.minecraftxiv.ClientInit;
 import wtf.kity.minecraftxiv.network.Capabilities;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+@Entrypoint("modmenu")
 public class Gui implements ModMenuApi {
     private static Component capabilityTooltip() {
         MutableComponent text = Component.translatable("minecraftxiv.config.capabilities.toggle.tooltip");

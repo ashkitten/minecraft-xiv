@@ -1,6 +1,7 @@
-package wtf.kity.minecraftxiv.mixin;
+package wtf.kity.minecraftxiv.mixin.client;
 
-import net.minecraft.client.Camera;
+//? <26 {
+/*import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -49,3 +50,4 @@ public abstract class GameRendererMixin {
         return instance.pick(d, f, bl);
     }
 }
+*///? }

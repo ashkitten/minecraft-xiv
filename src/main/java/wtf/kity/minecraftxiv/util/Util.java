@@ -5,7 +5,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.world.entity.player.Player;
 import org.apache.logging.log4j.LogManager;
+
+//? >26 {
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
+//? }
 
 /**
  * @author ChloeCDN
@@ -37,5 +43,13 @@ public class Util {
 
     public static boolean rectContainsPoint(ScreenRectangle rectangle, double x, double y) {
         return x >= rectangle.left() && x < rectangle.right() && y >= rectangle.top() && y < rectangle.bottom();
+    }
+
+    public static boolean hasPermissions(Player player) {
+        //? <26 {
+        /*return player.hasPermissions(2);
+         *///? } else {
+        return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS));
+        //? }
     }
 }

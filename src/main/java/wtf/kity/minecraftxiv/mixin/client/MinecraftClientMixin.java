@@ -1,10 +1,7 @@
-package wtf.kity.minecraftxiv.mixin;
+package wtf.kity.minecraftxiv.mixin.client;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.*;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +24,6 @@ import java.util.stream.StreamSupport;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
@@ -100,16 +96,20 @@ public abstract class MinecraftClientMixin {
                     Mod.lockOnTarget = entity.getEntity();
                 } else if (Mod.crosshairTarget instanceof BlockHitResult block) {
                     Mod.lockOnTarget = StreamSupport.stream(level.entitiesForRendering().spliterator(), true)
-                            .filter(entity ->entity != player
-                                            && entity.isAttackable()
-                                            && !entity.isInvisibleTo(player)
-                                            && entity.level().clip(new ClipContext(
-                                                    client.gameRenderer.getMainCamera().getPosition(),
-                                                    entity.position(),
-                                                    ClipContext.Block.OUTLINE,
-                                                    ClipContext.Fluid.NONE,
-                                                    cameraEntity
-                                    )).getType() != HitResult.Type.BLOCK)
+                            .filter(entity -> entity != player
+                                    && entity.isAttackable()
+                                    && !entity.isInvisibleTo(player)
+                                    && entity.level().clip(new ClipContext(
+                                    //? <26 {
+                                    /*client.gameRenderer.getMainCamera().getPosition(),
+                                     *///? } else {
+                                    client.gameRenderer.getMainCamera().position(),
+                                    //? }
+                                    entity.position(),
+                                    ClipContext.Block.OUTLINE,
+                                    ClipContext.Fluid.NONE,
+                                    cameraEntity
+                            )).getType() != HitResult.Type.BLOCK)
                             .min(Comparator.comparingDouble(block::distanceTo))
                             .orElse(null);
                 }
@@ -123,7 +123,11 @@ public abstract class MinecraftClientMixin {
                 }
             } else if (Mod.moving) {
                 Mod.moving = false;
-                GLFW.glfwSetCursorPos(window.getWindow(), lastX, lastY);
+                //? <26 {
+                /*GLFW.glfwSetCursorPos(window.getWindow(), lastX, lastY);
+                 *///? } else {
+                GLFW.glfwSetCursorPos(window.handle(), lastX, lastY);
+                //? }
                 mouse.xpos = lastX;
                 mouse.ypos = lastY;
             }
@@ -142,8 +146,12 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At("HEAD"))
-    public void clearLevel(CallbackInfo ci) {
+    //? <26 {
+    /*@Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At("HEAD"))
+    *///? } else {
+    @Inject(method = "disconnectFromWorld(Lnet/minecraft/network/chat/Component;)V", at = @At("HEAD"))
+    //? }
+    public void disconnectFromWorld(CallbackInfo ci) {
         ClientInit.setCapabilities(null);
     }
 }

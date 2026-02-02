@@ -1,4 +1,4 @@
-package wtf.kity.minecraftxiv.mixin;
+package wtf.kity.minecraftxiv.mixin.client;
 
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;

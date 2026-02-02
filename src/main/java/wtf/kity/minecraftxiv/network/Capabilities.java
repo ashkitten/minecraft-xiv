@@ -1,18 +1,28 @@
 package wtf.kity.minecraftxiv.network;
 
 import com.google.gson.*;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements FabricPacket {
+//? if <1.20.4 {
+/*import net.fabricmc.fabric.api.networking.v1.FabricPacket;
+import net.fabricmc.fabric.api.networking.v1.PacketType;
+import net.minecraft.network.FriendlyByteBuf;
+*///? } else {
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+//? }
+
+
+//? if <=1.20.4 {
+/*public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements FabricPacket {
     public static final PacketType<Capabilities> ID = PacketType.create(new ResourceLocation("minecraftxiv", "capabilities"), Capabilities::new);
 
     public Capabilities(FriendlyByteBuf buf) {
@@ -24,6 +34,27 @@ public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) imp
         buf.writeBoolean(targetFromCamera);
         buf.writeBoolean(unlimitedReach);
     }
+
+    @Override
+    public PacketType<? extends FabricPacket> getType() {
+        return ID;
+    }
+*///? } else {
+public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements CustomPacketPayload {
+    public static final Type<Capabilities> ID = new Type<>(Identifier.fromNamespaceAndPath("minecraftxiv", "capabilities"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, Capabilities> CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL,
+            Capabilities::targetFromCamera,
+            ByteBufCodecs.BOOL,
+            Capabilities::unlimitedReach,
+            Capabilities::new
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return ID;
+    }
+//? }
 
     public static Capabilities all() {
         return new Capabilities(true, true);
@@ -47,11 +78,6 @@ public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) imp
         } catch (FileNotFoundException e) {
             return Capabilities.none();
         }
-    }
-
-    @Override
-    public PacketType<? extends FabricPacket> getType() {
-        return ID;
     }
 
     public Capabilities withTargetFromCamera(boolean targetFromCamera) {

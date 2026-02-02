@@ -24,6 +24,9 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
+//? >26
+import net.minecraft.client.gui.components.WidgetTooltipHolder;
+
 public class ToggleableController<T> implements Controller<T> {
     public final Option<Boolean> enabled;
     public final Controller<T> inner;
@@ -70,6 +73,8 @@ public class ToggleableController<T> implements Controller<T> {
         private final TickBoxController.TickBoxControllerElement tickBox;
         private final AbstractWidget inner;
         private YACLScreen screen;
+        //? >26
+        private final WidgetTooltipHolder tooltip = new WidgetTooltipHolder();
 
         public ToggleableControllerWidget(ToggleableController<T> control, YACLScreen screen, Dimension<Integer> dim) {
             super(dim);
@@ -86,11 +91,23 @@ public class ToggleableController<T> implements Controller<T> {
         public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
             this.tickBox.render(graphics, mouseX, mouseY, delta);
             this.inner.render(graphics, mouseX, mouseY, delta);
-            screen.setTooltipForNextRenderPass(
+            //? <26 {
+            /*screen.setTooltipForNextRenderPass(
                     Tooltip.create(this.control.tickBoxTooltipFunction.get()),
                     new YACLTooltipPositioner(this.tickBox),
                     this.tickBox.isHovered()
             );
+            *///? } else {
+                this.tooltip.set(Tooltip.create(this.control.tickBoxTooltipFunction.get()));
+                this.tooltip.refreshTooltipForNextRenderPass(
+                        graphics,
+                        mouseX,
+                        mouseY,
+                        this.tickBox.isHovered(),
+                        this.tickBox.isFocused(),
+                        this.tickBox.getRectangle()
+                );
+            //? }
         }
 
         @Override
