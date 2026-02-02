@@ -86,7 +86,7 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onMouse(DD)V")
     )
     private void onMouse(Tutorial instance, double x, double y) {
-        //? <26 {
+        //? <1.21 {
         /*float tickDelta = minecraft.getDeltaFrameTime();
         *///? } else {
         float tickDelta = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true);
@@ -121,13 +121,13 @@ public class MouseMixin {
                 coords.x *= aspect;
                 coords.y = -coords.y;
                 Vector2d offsets = coords.mul(Math.tan(fov2));
-                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, /*?>26>>+'-'*/-1.0));
-                Vector3d right = camera.rotation().transform(new Vector3d(/*?<26>>+'-'*//*-*/1.0, 0.0, 0.0));
+                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, /*?>=1.21>>+'-'*/-1.0));
+                Vector3d right = camera.rotation().transform(new Vector3d(/*?<1.21>>+'-'*//*-*/1.0, 0.0, 0.0));
                 Vector3d up = camera.rotation().transform(new Vector3d(0.0, 1.0, 0.0));
                 Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
                 Vec3 rayDir = new Vec3(dir.x, dir.y, dir.z);
 
-                //? <26 {
+                //? <1.21.11 {
                 /*Vec3 start = camera.getPosition();
                 *///? } else {
                 Vec3 start = camera.position();
@@ -184,7 +184,7 @@ public class MouseMixin {
 
     @Redirect(
             method = "onScroll",
-    //? <26 {
+    //? <1.21.11 {
             /*at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V")
     )
     private void scrollCycling(Inventory instance, double amount) {
@@ -196,7 +196,7 @@ public class MouseMixin {
         if (Mod.enabled && Config.GSON.instance().scrollWheelZoom && !Util.hotbarHovered()) {
             Mod.zoom = Math.max(0.0f, Mod.zoom - (float) amount * 0.2f);
 
-    //? <26 {
+    //? <1.21.11 {
             /*return;
         }
         instance.swapPaint(amount);
@@ -208,7 +208,7 @@ public class MouseMixin {
     }
 
     @Redirect(
-            //? <26 {
+            //? <1.21.11 {
             /*method = "onPress",
             *///? } else {
             method = "onButton",
@@ -222,7 +222,7 @@ public class MouseMixin {
     }
 
     @Redirect(
-            //? <26 {
+            //? <1.21.11 {
             /*method = "onPress",
             *///? } else {
             method = "onButton",

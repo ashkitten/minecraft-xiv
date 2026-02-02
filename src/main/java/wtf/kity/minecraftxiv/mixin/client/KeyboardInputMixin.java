@@ -1,7 +1,7 @@
 package wtf.kity.minecraftxiv.mixin.client;
 
 import net.minecraft.client.Minecraft;
-//? <26 {
+//? <1.21.11 {
 /*import net.minecraft.client.player.Input;
 *///? } else {
 import net.minecraft.client.player.ClientInput;
@@ -18,7 +18,7 @@ import wtf.kity.minecraftxiv.config.Config;
 import wtf.kity.minecraftxiv.mod.Mod;
 
 @Mixin(KeyboardInput.class)
-//? <26 {
+//? <1.21.11 {
 /*public abstract class KeyboardInputMixin extends Input {
 *///? } else {
 public abstract class KeyboardInputMixin extends ClientInput {
@@ -29,13 +29,13 @@ public abstract class KeyboardInputMixin extends ClientInput {
             Minecraft client = Minecraft.getInstance();
             assert client.player != null;
             Vector2f movement = new Vector2f(this.getMoveVector().y, this.getMoveVector().x);
-            //? <26 {
+            //? <1.21.11 {
             /*float yaw = client.gameRenderer.getMainCamera().getYRot() - client.player.getVisualRotationYInDegrees();
             *///? } else {
             float yaw = client.gameRenderer.getMainCamera().yRot() - client.player.getVisualRotationYInDegrees();
             //? }
             movement.mul(new Matrix2f().rotate((float) Math.toRadians(-yaw)));
-            //? <26 {
+            //? <1.21.11 {
             /*this.leftImpulse = movement.y;
             this.forwardImpulse = movement.x;
             *///? } else {

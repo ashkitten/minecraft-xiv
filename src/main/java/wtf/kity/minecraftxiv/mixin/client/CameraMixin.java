@@ -39,23 +39,20 @@ public abstract class CameraMixin {
         }
     }
 
-    //? <26 {
-    /*@Redirect(
-            method = "setup",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(D)D", ordinal = 0)
-    )
+    //? <1.21 {
+    /*@Redirect(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(D)D", ordinal = 0))
     public double getMaxZoom(Camera instance, double cameraDist) {
-        Vec3 cameraPos = instance.getPosition();
-        Entity cameraEntity = instance.getEntity();
     *///? } else {
-    @Redirect(
-            method = "setup",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(F)F", ordinal = 0)
-    )
+    @Redirect(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(F)F", ordinal = 0))
     public float getMaxZoom(Camera instance, float cameraDist) {
+    //? }
+        //? <1.21.11 {
+        /*Vec3 cameraPos = instance.getPosition();
+        Entity cameraEntity = instance.getEntity();
+        *///? } else {
         Vec3 cameraPos = instance.position();
         Entity cameraEntity = instance.entity();
-    //? }
+        //? }
         if (Mod.enabled) {
             this.setRotation(Mod.yaw, Mod.pitch);
             Vector3f offset = new Vector3f(0, 0, zoom).rotate(instance.rotation());

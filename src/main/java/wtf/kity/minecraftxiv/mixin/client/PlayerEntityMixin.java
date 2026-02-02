@@ -1,6 +1,6 @@
 package wtf.kity.minecraftxiv.mixin.client;
 
-//? >26 {
+//? >=1.21 {
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +13,7 @@ import wtf.kity.minecraftxiv.config.Config;
 @Mixin(Player.class)
 public class PlayerEntityMixin {
     @Inject(method = "isWithinBlockInteractionRange", at = @At("RETURN"), cancellable = true)
-    public void canInteractWithBlockAt(BlockPos pos, double additionalRange, CallbackInfoReturnable<Boolean> cir) {
+    public void isWithinBlockInteractionRangeAt(BlockPos pos, double additionalRange, CallbackInfoReturnable<Boolean> cir) {
         if (Config.GSON.instance().unlimitedReach && ClientInit.getCapabilities().unlimitedReach()) {
             cir.setReturnValue(true);
             cir.cancel();

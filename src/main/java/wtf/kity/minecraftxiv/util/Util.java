@@ -8,7 +8,7 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.world.entity.player.Player;
 import org.apache.logging.log4j.LogManager;
 
-//? >26 {
+//? >=1.21.11 {
 import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionLevel;
 //? }
@@ -46,7 +46,7 @@ public class Util {
     }
 
     public static boolean hasPermissions(Player player) {
-        //? <26 {
+        //? <1.21.11 {
         /*return player.hasPermissions(2);
          *///? } else {
         return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS));

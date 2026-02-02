@@ -9,7 +9,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-//? if <1.20.4 {
+//? if <1.20.5 {
 /*import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,7 +21,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 //? }
 
 
-//? if <=1.20.4 {
+//? if <1.20.5 {
 /*public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements FabricPacket {
     public static final PacketType<Capabilities> ID = PacketType.create(new ResourceLocation("minecraftxiv", "capabilities"), Capabilities::new);
 
@@ -43,10 +43,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record Capabilities(boolean targetFromCamera, boolean unlimitedReach) implements CustomPacketPayload {
     public static final Type<Capabilities> ID = new Type<>(Identifier.fromNamespaceAndPath("minecraftxiv", "capabilities"));
     public static final StreamCodec<RegistryFriendlyByteBuf, Capabilities> CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL,
-            Capabilities::targetFromCamera,
-            ByteBufCodecs.BOOL,
-            Capabilities::unlimitedReach,
+            ByteBufCodecs.BOOL, Capabilities::targetFromCamera,
+            ByteBufCodecs.BOOL, Capabilities::unlimitedReach,
             Capabilities::new
     );
 

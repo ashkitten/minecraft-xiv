@@ -31,8 +31,10 @@ modstitch {
     this.minecraftVersion = minecraft
 
     val classTweaker = when {
-        stonecutter.eval(minecraft, "1.20.1") -> "1.20.1.classtweaker"
-        stonecutter.eval(minecraft, "26.1-snapshot-5") -> "26.1.classtweaker"
+        stonecutter.eval(minecraft, "<1.21") -> "1.20.1.classtweaker"
+        stonecutter.eval(minecraft, "<1.21.11") -> "1.21.1.classtweaker"
+        stonecutter.eval(minecraft, "<26") -> "1.21.11.classtweaker"
+        stonecutter.eval(minecraft, ">26") -> "26.1.classtweaker"
         else -> throw IllegalArgumentException("No access widener specified for $minecraft")
     }
 
@@ -107,16 +109,22 @@ modstitch {
 
 stonecutter {
     replacements {
+        string(current.parsed > "1.21.1") {
+            replace("ChunkProgressListenerFactory", "LevelLoadListener")
+            replace("pushPose", "pushMatrix")
+            replace("popPose", "popMatrix")
+        }
         string(current.parsed >= "1.21.11") {
             replace("ResourceLocation", "Identifier")
+            replace("getTimer", "getDeltaTracker")
+            replace("canInteractWithBlock", "isWithinBlockInteractionRange")
         }
-        string(current.parsed >= "26.1.0") {
-            replace("ChunkProgressListenerFactory", "LevelLoadListener")
+        string(current.parsed >= "26.1") {
+            replace("playS2C", "clientboundPlay")
+            replace("playC2S", "serverboundPlay")
             replace("keybinding", "keymapping")
             replace("KeyBindingHelper", "KeyMappingHelper")
             replace("registerKeyBinding", "registerKeyMapping")
-            replace("pushPose", "pushMatrix")
-            replace("popPose", "popMatrix")
         }
     }
 }

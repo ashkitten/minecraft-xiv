@@ -19,7 +19,7 @@ public class ServerInit implements DedicatedServerModInitializer {
 
     private static void setCapabilities(Capabilities capabilities) {
         ServerInit.capabilities = capabilities;
-        //? <26 {
+        //? <1.21 {
         /*if (capabilities != null && capabilities.unlimitedReach()) {
             ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE = Double.POSITIVE_INFINITY;
         } else {
@@ -36,7 +36,7 @@ public class ServerInit implements DedicatedServerModInitializer {
             packetSender.sendPacket(capabilities);
         });
 
-        //? <26 {
+        //? <1.20.5 {
         /*ServerPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, player, responseSender) -> {
             MinecraftServer server = player.getServer();
          *///? } else {

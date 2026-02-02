@@ -1,6 +1,6 @@
 package wtf.kity.minecraftxiv.mixin.client;
 
-//? >26 {
+//? >=1.21.11 {
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.world.entity.Entity;

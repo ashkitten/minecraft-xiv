@@ -11,7 +11,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-//? <26 {
+//? <1.21.11 {
 /*import net.minecraft.Util;
 *///? } else {
 import net.minecraft.util.Util;

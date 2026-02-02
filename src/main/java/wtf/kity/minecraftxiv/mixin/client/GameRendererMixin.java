@@ -1,6 +1,6 @@
 package wtf.kity.minecraftxiv.mixin.client;
 
-//? <26 {
+//? <1.21 {
 /*import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;

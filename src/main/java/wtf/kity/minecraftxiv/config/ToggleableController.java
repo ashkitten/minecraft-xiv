@@ -24,8 +24,10 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
-//? >26 {
+//? >=1.21.11
 import net.minecraft.client.gui.components.WidgetTooltipHolder;
+
+//? >=1.21.9 {
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -77,7 +79,7 @@ public class ToggleableController<T> implements Controller<T> {
         private final TickBoxController.TickBoxControllerElement tickBox;
         private final AbstractWidget inner;
         private YACLScreen screen;
-        //? >26
+        //? >=1.21.11
         private final WidgetTooltipHolder tooltip = new WidgetTooltipHolder();
 
         public ToggleableControllerWidget(ToggleableController<T> control, YACLScreen screen, Dimension<Integer> dim) {
@@ -95,7 +97,7 @@ public class ToggleableController<T> implements Controller<T> {
         public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
             this.tickBox.render(graphics, mouseX, mouseY, delta);
             this.inner.render(graphics, mouseX, mouseY, delta);
-            //? <26 {
+            //? <1.21.11 {
             /*screen.setTooltipForNextRenderPass(
                     Tooltip.create(this.control.tickBoxTooltipFunction.get()),
                     new YACLTooltipPositioner(this.tickBox),
@@ -183,36 +185,64 @@ public class ToggleableController<T> implements Controller<T> {
             this.inner.updateNarration(builder);
         }
 
-        //? >26 {
         @Override
-        public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean doubleClick) {
+        //? >=1.21.9 {
+        public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean doubleClick) {
             return ContainerEventHandler.super.mouseClicked(mouseButtonEvent, doubleClick);
+        //? } else {
+        /*public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            return ContainerEventHandler.super.mouseClicked(mouseX, mouseY, button);
+        *///? }
         }
 
         @Override
-        public boolean mouseReleased(@NotNull MouseButtonEvent mouseButtonEvent) {
+        //? >=1.21.9 {
+        public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
             return ContainerEventHandler.super.mouseReleased(mouseButtonEvent);
+        //? } else {
+        /*public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            return ContainerEventHandler.super.mouseReleased(mouseX, mouseY, button);
+        *///? }
         }
 
         @Override
-        public boolean mouseDragged(@NotNull MouseButtonEvent mouseButtonEvent, double dx, double dy) {
+        //? >=1.21.9 {
+        public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double dx, double dy) {
             return ContainerEventHandler.super.mouseDragged(mouseButtonEvent, dx, dy);
+        //? } else {
+        /*public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
+            return ContainerEventHandler.super.mouseDragged(mouseX, mouseY, button, dx, dy);
+        *///? }
         }
 
         @Override
-        public boolean keyPressed(@NotNull KeyEvent keyEvent) {
+        //? >=1.21.9 {
+        public boolean keyPressed(KeyEvent keyEvent) {
             return ContainerEventHandler.super.keyPressed(keyEvent);
+        //? } else {
+        /*public boolean keyPressed(int keycode, int scancode, int modifiers) {
+            return ContainerEventHandler.super.keyPressed(keycode, scancode, modifiers);
+        *///? }
         }
 
         @Override
-        public boolean keyReleased(@NotNull KeyEvent keyEvent) {
+        //? >=1.21.9 {
+        public boolean keyReleased(KeyEvent keyEvent) {
             return ContainerEventHandler.super.keyReleased(keyEvent);
+        //? } else {
+        /*public boolean keyReleased(int keycode, int scancode, int modifiers) {
+            return ContainerEventHandler.super.keyReleased(keycode, scancode, modifiers);
+        *///? }
         }
 
         @Override
-        public boolean charTyped(@NotNull CharacterEvent characterEvent) {
+        //? >=1.21.9 {
+        public boolean charTyped(CharacterEvent characterEvent) {
             return ContainerEventHandler.super.charTyped(characterEvent);
+        //? } else {
+        /*public boolean charTyped(char codePoint, int modifiers) {
+            return ContainerEventHandler.super.charTyped(codePoint, modifiers);
+        *///? }
         }
-        //? }
     }
 }

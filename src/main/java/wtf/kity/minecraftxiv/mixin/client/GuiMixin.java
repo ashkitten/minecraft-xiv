@@ -44,7 +44,7 @@ public abstract class GuiMixin {
     }
 
     @Inject(method = "renderCrosshair", at = @At("HEAD"))
-    private void crosshairPre(GuiGraphics context, /*?>26>>+','*/ DeltaTracker deltaTracker, CallbackInfo ci) {
+    private void crosshairPre(GuiGraphics context, /*?>=1.21>>+','*/ DeltaTracker deltaTracker, CallbackInfo ci) {
         if (Mod.enabled) {
             double scaleFactor = minecraft.getWindow().getGuiScale();
             MouseHandler mouse = minecraft.mouseHandler;
@@ -53,20 +53,20 @@ public abstract class GuiMixin {
             context.pose().translate(
                     (float) (-context.guiWidth() / 2d + mouse.xpos() / scaleFactor),
                     (float) (-context.guiHeight() / 2f + mouse.ypos() / scaleFactor)
-                    //? <26
+                    //? <1.21.11
                     //, 0.0f
             );
         }
     }
 
     @Inject(method = "renderCrosshair", at = @At("RETURN"))
-    private void crosshairPost(GuiGraphics context, /*?>26>>+','*/ DeltaTracker deltaTracker, CallbackInfo ci) {
+    private void crosshairPost(GuiGraphics context, /*?>=1.21>>+','*/ DeltaTracker deltaTracker, CallbackInfo ci) {
         if (Mod.enabled) {
             context.pose().popMatrix();
         }
     }
 
-    //? <26 {
+    //? <1.21 {
     /*@WrapOperation(
             method = "renderHotbar",
             at = @At(
@@ -108,7 +108,7 @@ public abstract class GuiMixin {
                 graphics.renderOutline(x - 2, y - 2, 20, 20, 0xFFFFFFFF);
 
                 if (mouse.isLeftPressed()) {
-                    //? <26 {
+                    //? <1.21.11 {
                     /*player.getInventory().selected = i;
                     *///? } else {
                     player.getInventory().setSelectedSlot(i);

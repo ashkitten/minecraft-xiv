@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-//? <26 {
+//? <1.21.11 {
 /*import net.minecraft.client.renderer.RenderType;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.EntityModel;
@@ -33,7 +33,7 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverl
 //? }
 
 @Mixin(LivingEntityRenderer.class)
-//? <26 {
+//? <1.21.11 {
 /*public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extends EntityModel<T>> extends EntityRenderer<T> {
     protected LivingEntityRendererMixin(EntityRendererProvider.Context context) {
         super(context);
@@ -43,12 +43,20 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverl
             method = "render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/model/EntityModel;renderToBuffer(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;IIFFFF)V"
+                    //? <1.21 {
+                    /^target = "Lnet/minecraft/client/model/EntityModel;renderToBuffer(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;IIFFFF)V"
+                    ^///? } else {
+                    target = "Lnet/minecraft/client/model/EntityModel;renderToBuffer(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;III)V"
+                    //? }
             )
     )
     public void renderToBuffer(
             M model,
-            PoseStack poseStack, VertexConsumer vertexConsumer, int i, int j, float f, float g, float h, float k,
+            //? <1.21 {
+            /^PoseStack poseStack, VertexConsumer vertexConsumer, int i, int j, float f, float g, float h, float k,
+            ^///? } else {
+            PoseStack poseStack, VertexConsumer vertexConsumer, int lightCoords, int overlayCoords, int tintedColor,
+            //? }
             @Local(argsOnly = true) T livingEntity,
             @Local(argsOnly = true) MultiBufferSource multiBufferSource
     ) {
@@ -72,7 +80,7 @@ public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderStat
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         LocalPlayer player = Minecraft.getInstance().player;
 
-        //? <26 {
+        //? <1.21.11 {
         /*if (livingEntity.is(player)
         *///? } else {
         if (livingEntityRenderState instanceof AvatarRenderState playerEntityRenderState
@@ -80,24 +88,30 @@ public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderStat
                 && playerEntityRenderState.id == player.getId()
         //? }
                 && camera.isDetached()
-                //? <26 {
+                //? <1.21.11 {
                 /*&& camera.getPosition().distanceTo(player.getEyePosition()) < 1.0) {
                 *///? } else {
                 && camera.position().distanceTo(player.getEyePosition()) < 1.0) {
             //? }
 
             // Same as spectator mode (ref. LivingEntityRenderer#getRenderLayer)
-            //? <26 {
+            //? <1.21.11 {
             /*vertexConsumer = multiBufferSource.getBuffer(RenderType.entityTranslucentCull(getTextureLocation(livingEntity)));
-            k = 0.15f;
             *///? } else {
             renderLayer = RenderTypes.itemEntityTranslucentCull(this.getTextureLocation((S) state));
+            //? }
+
+            //? <1.21 {
+            /*k = 0.15f;
+            *///? } else {
             tintedColor = 0x26FFFFFF;
             //? }
         }
 
-        //? <26 {
+        //? <1.21 {
         /*model.renderToBuffer(poseStack, vertexConsumer, i, j, f, g, h, k);
+        *///? } else <1.21.11 {
+        /*model.renderToBuffer(poseStack, vertexConsumer, lightCoords, overlayCoords, tintedColor);
         *///? } else {
         instance.submitModel(model, state, matrices, renderLayer, light, overlay, tintedColor, sprite, outlineColor, crumblingOverlay);
         //? }

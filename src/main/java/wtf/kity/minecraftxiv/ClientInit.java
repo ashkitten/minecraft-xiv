@@ -28,14 +28,12 @@ import java.util.function.Consumer;
 //? >=1.20.5
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 
-//? >=1.21.9
-import net.minecraft.resources.Identifier;
-
-//? <26 {
+//? <1.21.9 {
 /*import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.Mth;
 import net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry;
 *///? } else {
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionLevel;
 //? }
@@ -84,7 +82,7 @@ public class ClientInit implements ClientModInitializer {
 
     public static void setCapabilities(@Nullable Capabilities capabilities) {
         ClientInit.capabilities = capabilities;
-        //? <26 {
+        //? <1.21 {
         /*if (capabilities != null && capabilities.unlimitedReach()) {
             ServerGamePacketListenerImpl.MAX_INTERACTION_DISTANCE = Double.POSITIVE_INFINITY;
         } else {
