@@ -216,7 +216,7 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;set(Lcom/mojang/blaze3d/platform/InputConstants$Key;Z)V")
     )
     private void beforeSetKeyMapping(InputConstants.Key key, boolean pressed) {
-        if (Mod.enabled && !Util.hotbarHovered()) {
+        if (!Mod.enabled || !Util.hotbarHovered()) {
             KeyMapping.set(key, pressed);
         }
     }
@@ -230,7 +230,7 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/KeyMapping;click(Lcom/mojang/blaze3d/platform/InputConstants$Key;)V")
     )
     private void beforeSetKeyMapping(InputConstants.Key key) {
-        if (Mod.enabled && !Util.hotbarHovered()) {
+        if (!Mod.enabled || !Util.hotbarHovered()) {
             KeyMapping.click(key);
         }
     }
