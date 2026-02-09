@@ -2,11 +2,18 @@ package wtf.kity.minecraftxiv.util;
 
 import com.mojang.blaze3d.platform.Window;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.Nullable;
 
 //? >=1.21.11 {
 import net.minecraft.server.permissions.Permission;
@@ -51,5 +58,48 @@ public class Util {
          *///? } else {
         return player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS));
         //? }
+    }
+
+    private static @Nullable Double groundedY;
+    private static @Nullable Double lastGroundY;
+    public static Vec3 getGroundedEyePos() {
+        Minecraft minecraft = Minecraft.getInstance();
+        Camera camera = minecraft.gameRenderer.getMainCamera();
+        //? <1.21.11 {
+        /*Entity entity = camera.getEntity();
+        *///? } else {
+        Entity entity = camera.entity();
+        //? }
+
+        //? <1.21 {
+        /*Vec3 pos = entity.getPosition(minecraft.getDeltaFrameTime());
+        *///? } else {
+        Vec3 pos = entity.getPosition(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true));
+        //? }
+        if (groundedY == null || lastGroundY == null) {
+            groundedY = pos.y;
+            lastGroundY = pos.y;
+        }
+
+        BlockHitResult target = entity.level().clip(new ClipContext(
+                pos,
+                pos.add(new Vec3(0.0, -3.0, 0.0)),
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.ANY,
+                entity
+        ));
+
+        if (entity.onGround() || target.getType() == HitResult.Type.MISS || entity.isInWater()) {
+            lastGroundY = target.getLocation().y;
+        }
+
+        if (groundedY < lastGroundY) {
+            groundedY += (lastGroundY - groundedY) * 0.05;
+        } else if (!entity.onGround() && groundedY > pos.y) {
+            groundedY = pos.y;
+            lastGroundY = pos.y;
+        }
+
+        return new Vec3(pos.x, groundedY, pos.z);
     }
 }

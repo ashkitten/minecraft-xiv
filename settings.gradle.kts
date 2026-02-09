@@ -38,11 +38,12 @@ stonecutter {
         mc("1.20.1", loaders = listOf("fabric"))
         mc("1.21.1", loaders = listOf("fabric"))
         mc("1.21.11", loaders = listOf("fabric"))
-        mc("26.1.0", loaders = listOf("fabric"))
+        // waiting until sodium is available for this version
+        //mc("26.1.0", loaders = listOf("fabric"))
 
         // This is the default target.
         // https://stonecutter.kikugie.dev/stonecutter/guide/setup#settings-settings-gradle-kts
-        vcsVersion = "26.1.0-fabric"
+        vcsVersion = "1.21.11-fabric"
     }
 }
 

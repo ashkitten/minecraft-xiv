@@ -28,7 +28,7 @@ import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
 
 //? <26
-//import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Inventory;
 
 @Mixin(MouseHandler.class)
 public class MouseMixin {
@@ -86,6 +86,8 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onMouse(DD)V")
     )
     private void onMouse(Tutorial instance, double x, double y) {
+        instance.onMouse(x, y);
+
         //? <1.21 {
         /*float tickDelta = minecraft.getDeltaFrameTime();
         *///? } else {

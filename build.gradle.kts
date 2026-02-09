@@ -109,6 +109,9 @@ modstitch {
 
 stonecutter {
     replacements {
+        string(current.parsed >= "1.21") {
+            replace("me.jellysquid", "net.caffeinemc")
+        }
         string(current.parsed > "1.21.1") {
             replace("ChunkProgressListenerFactory", "LevelLoadListener")
             replace("pushPose", "pushMatrix")
@@ -157,6 +160,7 @@ dependencies {
 
     impl("dev.isxander:yet-another-config-lib:${property("yacl_version")}")
     impl("com.terraformersmc:modmenu:${property("modmenu_version")}")
+    findProperty("sodium_version")?.let { impl("maven.modrinth:sodium:$it") }
 }
 
 publishMods {

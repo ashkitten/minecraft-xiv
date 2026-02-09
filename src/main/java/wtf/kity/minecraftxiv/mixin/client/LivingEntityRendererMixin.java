@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import wtf.kity.minecraftxiv.mod.Mod;
 
 //? <1.21.11 {
 /*import net.minecraft.client.renderer.RenderType;
@@ -30,6 +31,9 @@ import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Shadow;
 import org.jspecify.annotations.Nullable;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import org.spongepowered.asm.mixin.injection.Inject;
 //? }
 
 @Mixin(LivingEntityRenderer.class)
@@ -64,6 +68,7 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverl
 public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderState, SS> {
     @Shadow
     public abstract Identifier getTextureLocation(S state);
+
     @Redirect(
             method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V",
             at = @At(
@@ -105,6 +110,7 @@ public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderStat
             /*k = 0.15f;
             *///? } else {
             tintedColor = 0x26FFFFFF;
+            Mod.translucencyMask = 0;
             //? }
         }
 
@@ -115,5 +121,7 @@ public abstract class LivingEntityRendererMixin<S extends LivingEntityRenderStat
         *///? } else {
         instance.submitModel(model, state, matrices, renderLayer, light, overlay, tintedColor, sprite, outlineColor, crumblingOverlay);
         //? }
+
+        Mod.translucencyMask = 0xFFFFFFFF;
     }
 }

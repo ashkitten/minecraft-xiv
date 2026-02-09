@@ -4,6 +4,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import org.spongepowered.asm.mixin.Unique;
 
 public class Mod {
     public static float yaw;
@@ -14,4 +15,5 @@ public class Mod {
     public static CameraType lastPerspective;
     public static HitResult crosshairTarget;
     public static Entity lockOnTarget;
+    public static int translucencyMask = 0xFFFFFFFF;
 }

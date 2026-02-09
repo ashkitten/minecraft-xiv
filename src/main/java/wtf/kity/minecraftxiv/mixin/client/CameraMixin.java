@@ -1,10 +1,9 @@
 package wtf.kity.minecraftxiv.mixin.client;
 
 import net.minecraft.client.Camera;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -13,15 +12,12 @@ import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 import wtf.kity.minecraftxiv.mod.Mod;
+import wtf.kity.minecraftxiv.util.Util;
 
 @Mixin(Camera.class)
 public abstract class CameraMixin {
-    @SuppressWarnings("unused")
     @Shadow
-    private float yRot;
-    @SuppressWarnings("unused")
-    @Shadow
-    private float xRot;
+    private Entity entity;
 
     @Unique
     private float zoom;
@@ -31,11 +27,22 @@ public abstract class CameraMixin {
 
     @ModifyArgs(
             method = "setup",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V", ordinal = 0)
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FF)V")
     )
     public void setRotation(Args args) {
         if (Mod.enabled) {
             args.setAll(Mod.yaw, Mod.pitch);
+        }
+    }
+
+    @ModifyArgs(
+            method = "setup",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V")
+    )
+    public void setPosition(Args args) {
+        if (Mod.enabled) {
+            Vec3 pos = Util.getGroundedEyePos().add(0.0, entity.getEyeHeight(Pose.STANDING), 0.0);
+            args.setAll(pos.x, pos.y, pos.z);
         }
     }
 
@@ -46,25 +53,9 @@ public abstract class CameraMixin {
     @Redirect(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;getMaxZoom(F)F", ordinal = 0))
     public float getMaxZoom(Camera instance, float cameraDist) {
     //? }
-        //? <1.21.11 {
-        /*Vec3 cameraPos = instance.getPosition();
-        Entity cameraEntity = instance.getEntity();
-        *///? } else {
-        Vec3 cameraPos = instance.position();
-        Entity cameraEntity = instance.entity();
-        //? }
         if (Mod.enabled) {
             this.setRotation(Mod.yaw, Mod.pitch);
-            Vector3f offset = new Vector3f(0, 0, zoom).rotate(instance.rotation());
-            Vec3 pos = new Vec3(cameraPos.x + offset.x, cameraPos.y + offset.y, cameraPos.z + offset.z);
-            if (zoom != cameraDist * Mod.zoom || !cameraEntity.level().isEmptyBlock(BlockPos.containing(pos))) {
-                zoom = (float) cameraDist * Mod.zoom;
-                offset = new Vector3f(0, 0, zoom).rotate(instance.rotation());
-                pos = new Vec3(cameraPos.x + offset.x, cameraPos.y + offset.y, cameraPos.z + offset.z);
-                if (!cameraEntity.level().isEmptyBlock(BlockPos.containing(pos))) {
-                    zoom = (float) instance.getMaxZoom((float) cameraDist * Mod.zoom);
-                }
-            }
+            return (float) cameraDist * Mod.zoom;
         } else {
             zoom = (float) instance.getMaxZoom((float) cameraDist);
         }

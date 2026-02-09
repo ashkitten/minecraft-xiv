@@ -3,7 +3,7 @@ plugins {
     id("me.modmuss50.mod-publish-plugin") version "0.8.4"
 }
 
-stonecutter active "26.1.0-fabric"
+stonecutter active "1.21.11-fabric"
 
 allprojects {
     repositories {

@@ -2,7 +2,7 @@ package wtf.kity.minecraftxiv;
 
 import dev.kikugie.fletching_table.annotation.fabric.Entrypoint;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -123,31 +123,31 @@ public class ClientInit implements ClientModInitializer {
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.parse("minecraftxiv.binds.category"));
         //? }
 
-        KeyMappingHelper.registerKeyMapping(toggleBinding = new KeyMapping(
+        KeyBindingHelper.registerKeyBinding(toggleBinding = new KeyMapping(
                 "minecraftxiv.binds.toggle",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_F4,
                 category
         ));
-        KeyMappingHelper.registerKeyMapping(moveCameraBinding = new KeyMapping(
+        KeyBindingHelper.registerKeyBinding(moveCameraBinding = new KeyMapping(
                 "minecraftxiv.binds.moveCamera",
                 InputConstants.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_3,
                 category
         ));
-        KeyMappingHelper.registerKeyMapping(zoomInBinding = new KeyMapping(
+        KeyBindingHelper.registerKeyBinding(zoomInBinding = new KeyMapping(
                 "minecraftxiv.binds.zoomIn",
                 InputConstants.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_6,
                 category
         ));
-        KeyMappingHelper.registerKeyMapping(zoomOutBinding = new KeyMapping(
+        KeyBindingHelper.registerKeyBinding(zoomOutBinding = new KeyMapping(
                 "minecraftxiv.binds.zoomOut",
                 InputConstants.Type.MOUSE,
                 GLFW.GLFW_MOUSE_BUTTON_7,
                 category
         ));
-        KeyMappingHelper.registerKeyMapping(cycleTargetBinding = new KeyMapping(
+        KeyBindingHelper.registerKeyBinding(cycleTargetBinding = new KeyMapping(
                 "minecraftxiv.binds.cycleTarget",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_TAB,
@@ -172,7 +172,7 @@ public class ClientInit implements ClientModInitializer {
         //? <1.20.5 {
         /*ClientPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, player, responseSender) -> {
         *///? } else {
-        PayloadTypeRegistry.clientboundPlay().register(Capabilities.ID, Capabilities.CODEC);
+        PayloadTypeRegistry.playS2C().register(Capabilities.ID, Capabilities.CODEC);
         ClientPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
         //? }
             setCapabilities(payload);
@@ -198,7 +198,7 @@ public class ClientInit implements ClientModInitializer {
         /*ServerPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, player, responseSender) -> {
             MinecraftServer server = player.getServer();
          *///? } else {
-        PayloadTypeRegistry.serverboundPlay().register(Capabilities.ID, Capabilities.CODEC);
+        PayloadTypeRegistry.playC2S().register(Capabilities.ID, Capabilities.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(Capabilities.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             MinecraftServer server = context.server();

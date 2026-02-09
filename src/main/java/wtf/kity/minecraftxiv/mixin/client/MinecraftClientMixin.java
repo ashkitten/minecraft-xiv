@@ -1,9 +1,17 @@
 package wtf.kity.minecraftxiv.mixin.client;
 
 import com.mojang.blaze3d.platform.Window;
-import net.minecraft.client.*;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.Options;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
@@ -21,12 +29,6 @@ import wtf.kity.minecraftxiv.util.Util;
 
 import java.util.Comparator;
 import java.util.stream.StreamSupport;
-
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.HitResult;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftClientMixin {
