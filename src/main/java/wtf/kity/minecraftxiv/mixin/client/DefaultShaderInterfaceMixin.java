@@ -62,9 +62,11 @@ public class DefaultShaderInterfaceMixin {
     @Unique
     private GlUniformInt uniformPositionBuffer;
     @Unique
-    private GpuTexture positionTexture;
+    private int positionTexture;
     @Unique
     private GlSampler positionSampler;
+    @Unique
+    private int framebuffer;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     public void initPost(ShaderBindingContext context, ChunkShaderOptions options, CallbackInfo ci) {
@@ -84,56 +86,64 @@ public class DefaultShaderInterfaceMixin {
 
         int slotOrdinal = uniformTextures.size();
 
-        if (positionTexture != null) positionTexture.close();
+//        if (positionTexture != null) positionTexture.close();
 
-        GpuDevice gpuDevice = RenderSystem.getDevice();
-        GlTexture positionTexture = (GlTexture) gpuDevice.createTexture((@Nullable String) null, 15, TextureFormat.RGBA8, target.width, target.height, 1, 1);
+//        GpuDevice gpuDevice = RenderSystem.getDevice();
+//        GlTexture positionTexture = (GlTexture) gpuDevice.createTexture((@Nullable String) null, 15, TextureFormat.RGBA8, target.width, target.height, 1, 1);
 
-//        if (positionTexture != 0) GlStateManager._deleteTexture(positionTexture);
-//        positionTexture = GlStateManager._genTexture();
+        if (framebuffer != 0) GlStateManager._glDeleteFramebuffers(framebuffer);
+        framebuffer = GlStateManager.glGenFramebuffers();
+        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+
+        if (positionTexture != 0) GlStateManager._deleteTexture(positionTexture);
+        positionTexture = GlStateManager._genTexture();
         GlStateManager._activeTexture(GL13.GL_TEXTURE0 + slotOrdinal);
-        GlStateManager._bindTexture(positionTexture.glId());
-//        GL11.glTexImage2D(
-//                GL11.GL_TEXTURE_2D,
-//                0,
-//                GL11.GL_RGB,
-//                target.width,
-//                target.height,
-//                0,
-//                GL11.GL_RGB,
-//                GL11.GL_FLOAT,
-//                0
-//        );
-//        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-//        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GlStateManager._bindTexture(positionTexture);
+        GL11.glTexImage2D(
+                GL11.GL_TEXTURE_2D,
+                0,
+                GL11.GL_RGB,
+                target.width,
+                target.height,
+                0,
+                GL11.GL_RGB,
+                GL11.GL_FLOAT,
+                0
+        );
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 
-//        GL44.glClearTexImage(positionTexture.glId(), 0, GL11.GL_RGB, GL11.GL_FLOAT, (@Nullable ByteBuffer) null);
+        GL44.glClearTexImage(positionTexture, 0, GL11.GL_RGB, GL11.GL_FLOAT, (@Nullable ByteBuffer) null);
 
         GL33C.glBindSampler(slotOrdinal, this.positionSampler.getId());
         this.uniformPositionBuffer.set(slotOrdinal);
 
-        GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT1, positionTexture.glId(), 0);
+        GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, ((GlTexture) target.getColorTexture()).glId(), 0);
+        GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT1, GL11.GL_TEXTURE_2D, positionTexture, 0);
 
         GL20.glDrawBuffers(new int[] {
                 GL30.GL_COLOR_ATTACHMENT0,
                 GL30.GL_COLOR_ATTACHMENT1,
         });
 
-        GlStateManager._glBindFramebuffer(
-                GlConst.GL_FRAMEBUFFER,
-                ((GlTexture) target.getColorTexture()).getFbo(
-                        ((GlDevice) RenderSystem.getDevice()).directStateAccess(),
-                        positionTexture
-                )
-        );
+//        GlStateManager._glBindFramebuffer(
+//                GlConst.GL_FRAMEBUFFER,
+//                ((GlTexture) target.getColorTexture()).getFbo(
+//                        ((GlDevice) RenderSystem.getDevice()).directStateAccess(),
+//                        positionTexture
+//                )
+//        );
+
+        assert GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE;
 
         this.uniformResolution.set(target.width, target.height);
 
 //        GlTexture depth = (GlTexture) target.getDepthTexture();
 //        assert depth != null;
+//        RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(depth, 1.0);
 //        GlStateManager._activeTexture(GL32C.GL_TEXTURE0 + slotOrdinal);
 //        GlStateManager._bindTexture(depth.glId());
-//        GL33C.glBindSampler(++slotOrdinal, this.depthSampler.getId());
+//        GL33C.glBindSampler(slotOrdinal, this.depthSampler.getId());
 //        this.uniformDepthBuffer.set(slotOrdinal);
     }
 

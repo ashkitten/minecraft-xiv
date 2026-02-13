@@ -20,10 +20,22 @@ float blockDist(int scale, vec3 dist) {
 }
 
 void do_culling() {
-    position = v_FragCoord;
     vec2 uv = gl_FragCoord.xy / u_Resolution;
-    vec3 prevCoord = texture(u_PositionBuffer, uv).xyz;
-    if (prevCoord == vec3(0)) return;
+
+//    vec3 prevCoord = texture(u_PositionBuffer, uv).xyz;
+//    position = v_FragCoord;
+//    if (prevCoord == vec3(0)) return;
+
+//    gl_FragDepth = 0;
+
+    if (texture(u_PositionBuffer, uv).r == 0) {
+        position.r = 1;
+        return;
+    } else if (texture(u_PositionBuffer, uv).g == 1) {
+        discard;
+    }
+
+    vec3 prevCoord = v_FragCoord;
 
     // all numbers are magic numbers if you don't know what they mean
     vec2 coord = mod(v_TexCoord / u_TexelSize - 0.5, 16);
@@ -61,8 +73,8 @@ void do_culling() {
         (prevCoord.y + u_CameraPos.y > u_EyePos.y) &&
         (angle < 3.141592653 / 4)
     ) {
-        return;
+        position.g = 1;
+    } else {
+        position.g = 0;
     }
-
-    discard;
 }
