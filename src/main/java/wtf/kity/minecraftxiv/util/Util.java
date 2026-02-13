@@ -89,14 +89,10 @@ public class Util {
                 entity
         ));
 
+        groundedY += (lastGroundY - groundedY) * 0.02;
         if (entity.onGround() || target.getType() == HitResult.Type.MISS || entity.isInWater()) {
             lastGroundY = target.getLocation().y;
-        }
-
-        if (groundedY < lastGroundY) {
-            groundedY += (lastGroundY - groundedY) * 0.05;
         } else if (!entity.onGround() && groundedY > pos.y) {
-            groundedY = pos.y;
             lastGroundY = pos.y;
         }
 
