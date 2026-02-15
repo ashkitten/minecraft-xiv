@@ -7,3 +7,5 @@ accessible field net/minecraft/client/MouseHandler ypos D
 accessible method net/minecraft/client/MouseHandler onMove (JDD)V
 
 accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F
+
+accessible field net/caffeinemc/mods/sodium/client/render/chunk/ShaderChunkRenderer activeProgram Lnet/caffeinemc/mods/sodium/client/gl/shader/GlProgram;

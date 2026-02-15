@@ -16,4 +16,6 @@ public class Mod {
     public static HitResult crosshairTarget;
     public static Entity lockOnTarget;
     public static int translucencyMask = 0xFFFFFFFF;
+    /// whether this is the second pass where we should be culling
+    public static boolean doCulling;
 }

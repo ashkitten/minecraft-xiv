@@ -2,9 +2,8 @@ package wtf.kity.minecraftxiv.mixin.client;
 
 import com.mojang.blaze3d.opengl.*;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.*;
+import net.caffeinemc.mods.sodium.client.gl.shader.uniform.GlUniformBool;
 import net.caffeinemc.mods.sodium.client.gl.shader.uniform.GlUniformFloat2v;
 import net.caffeinemc.mods.sodium.client.gl.shader.uniform.GlUniformFloat3v;
 import net.caffeinemc.mods.sodium.client.gl.shader.uniform.GlUniformInt;
@@ -17,7 +16,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4fc;
 import org.lwjgl.opengl.*;
 import org.spongepowered.asm.mixin.Final;
@@ -27,6 +25,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import wtf.kity.minecraftxiv.mod.Mod;
 import wtf.kity.minecraftxiv.util.Util;
 
 //? <1.21 {
@@ -35,7 +34,6 @@ import wtf.kity.minecraftxiv.util.Util;
 *///? } else {
 import net.caffeinemc.mods.sodium.client.render.chunk.shader.DefaultShaderInterface;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.OptionalDouble;
 
@@ -67,84 +65,92 @@ public class DefaultShaderInterfaceMixin {
     private GlSampler positionSampler;
     @Unique
     private int framebuffer;
+    @Unique
+    private GlUniformBool uniformDoCulling;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     public void initPost(ShaderBindingContext context, ChunkShaderOptions options, CallbackInfo ci) {
         this.uniformPlayerPos = context.bindUniform("u_PlayerPos", GlUniformFloat3v::new);
         this.uniformEyePos = context.bindUniform("u_EyePos", GlUniformFloat3v::new);
         this.uniformCameraPos = context.bindUniform("u_CameraPos", GlUniformFloat3v::new);
-        this.uniformResolution = context.bindUniform("u_Resolution", GlUniformFloat2v::new);
+//        this.uniformResolution = context.bindUniform("u_Resolution", GlUniformFloat2v::new);
 //        this.uniformDepthBuffer = context.bindUniform("u_DepthBuffer", GlUniformInt::new);
 //        this.depthSampler = new GlSampler(AddressMode.REPEAT, AddressMode.REPEAT, FilterMode.NEAREST, FilterMode.NEAREST, 0, OptionalDouble.empty());
-        this.uniformPositionBuffer = context.bindUniform("u_PositionBuffer", GlUniformInt::new);
-        this.positionSampler = new GlSampler(AddressMode.REPEAT, AddressMode.REPEAT, FilterMode.NEAREST, FilterMode.NEAREST, 0, OptionalDouble.empty());
+        this.uniformDoCulling = context.bindUniform("u_DoCulling", GlUniformBool::new);
+
+//        this.uniformPositionBuffer = context.bindUniform("u_PositionBuffer", GlUniformInt::new);
+//        this.positionSampler = new GlSampler(AddressMode.REPEAT, AddressMode.REPEAT, FilterMode.NEAREST, FilterMode.NEAREST, 0, OptionalDouble.empty());
     }
 
     @Inject(method = "setupState", at = @At("TAIL"))
     public void setupStatePost(TerrainRenderPass pass, FogParameters parameters, GpuSampler terrainSampler, CallbackInfo ci) {
-        RenderTarget target = pass.getTarget();
-
-        int slotOrdinal = uniformTextures.size();
-
-//        if (positionTexture != null) positionTexture.close();
-
-//        GpuDevice gpuDevice = RenderSystem.getDevice();
-//        GlTexture positionTexture = (GlTexture) gpuDevice.createTexture((@Nullable String) null, 15, TextureFormat.RGBA8, target.width, target.height, 1, 1);
-
-        if (framebuffer != 0) GlStateManager._glDeleteFramebuffers(framebuffer);
-        framebuffer = GlStateManager.glGenFramebuffers();
-        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
-
-        if (positionTexture != 0) GlStateManager._deleteTexture(positionTexture);
-        positionTexture = GlStateManager._genTexture();
-        GlStateManager._activeTexture(GL13.GL_TEXTURE0 + slotOrdinal);
-        GlStateManager._bindTexture(positionTexture);
-        GL11.glTexImage2D(
-                GL11.GL_TEXTURE_2D,
-                0,
-                GL11.GL_RGB,
-                target.width,
-                target.height,
-                0,
-                GL11.GL_RGB,
-                GL11.GL_FLOAT,
-                0
-        );
-        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-
-        GL44.glClearTexImage(positionTexture, 0, GL11.GL_RGB, GL11.GL_FLOAT, (@Nullable ByteBuffer) null);
-
-        GL33C.glBindSampler(slotOrdinal, this.positionSampler.getId());
-        this.uniformPositionBuffer.set(slotOrdinal);
-
-        GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, ((GlTexture) target.getColorTexture()).glId(), 0);
-        GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT1, GL11.GL_TEXTURE_2D, positionTexture, 0);
-
-        GL20.glDrawBuffers(new int[] {
-                GL30.GL_COLOR_ATTACHMENT0,
-                GL30.GL_COLOR_ATTACHMENT1,
-        });
-
-//        GlStateManager._glBindFramebuffer(
-//                GlConst.GL_FRAMEBUFFER,
-//                ((GlTexture) target.getColorTexture()).getFbo(
-//                        ((GlDevice) RenderSystem.getDevice()).directStateAccess(),
-//                        positionTexture
-//                )
-//        );
-
-        assert GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE;
-
-        this.uniformResolution.set(target.width, target.height);
-
+//        RenderTarget target = pass.getTarget();
+//
+//        int slotOrdinal = uniformTextures.size();
+//
+////        if (positionTexture != null) positionTexture.close();
+//
+////        GpuDevice gpuDevice = RenderSystem.getDevice();
+////        GlTexture positionTexture = (GlTexture) gpuDevice.createTexture((@Nullable String) null, 15, TextureFormat.RGBA8, target.width, target.height, 1, 1);
+//
+////        if (framebuffer != 0) GlStateManager._glDeleteFramebuffers(framebuffer);
+////        framebuffer = GlStateManager.glGenFramebuffers();
+////        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebuffer);
+////
+////        //if (positionTexture != 0) GlStateManager._deleteTexture(positionTexture);
+////        if (positionTexture == 0) {
+////            positionTexture = GlStateManager._genTexture();
+////            GlStateManager._activeTexture(GL13.GL_TEXTURE0 + slotOrdinal);
+////            GlStateManager._bindTexture(positionTexture);
+////            GL11.glTexImage2D(
+////                    GL11.GL_TEXTURE_2D,
+////                    0,
+////                    GL11.GL_RGB,
+////                    target.width,
+////                    target.height,
+////                    0,
+////                    GL11.GL_RGB,
+////                    GL11.GL_FLOAT,
+////                    0
+////            );
+////            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+////            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+////
+////            GL44.glClearTexImage(positionTexture, 0, GL11.GL_RGB, GL11.GL_FLOAT, (@Nullable ByteBuffer) null);
+////
+////            GL33C.glBindSampler(slotOrdinal, this.positionSampler.getId());
+////            this.uniformPositionBuffer.set(slotOrdinal);
+////        }
+////
+////        GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, ((GlTexture) target.getColorTexture()).glId(), 0);
+////        GL32.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT1, GL11.GL_TEXTURE_2D, positionTexture, 0);
+////
+////        GL20.glDrawBuffers(new int[] {
+////                GL30.GL_COLOR_ATTACHMENT0,
+////                GL30.GL_COLOR_ATTACHMENT1,
+////        });
+//
+////        GlStateManager._glBindFramebuffer(
+////                GlConst.GL_FRAMEBUFFER,
+////                ((GlTexture) target.getColorTexture()).getFbo(
+////                        ((GlDevice) RenderSystem.getDevice()).directStateAccess(),
+////                        positionTexture
+////                )
+////        );
+//
+////        assert GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_COMPLETE;
+//
+////        this.uniformResolution.set(target.width, target.height);
+//
 //        GlTexture depth = (GlTexture) target.getDepthTexture();
 //        assert depth != null;
-//        RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(depth, 1.0);
+////        RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(depth, 1.0);
 //        GlStateManager._activeTexture(GL32C.GL_TEXTURE0 + slotOrdinal);
 //        GlStateManager._bindTexture(depth.glId());
 //        GL33C.glBindSampler(slotOrdinal, this.depthSampler.getId());
 //        this.uniformDepthBuffer.set(slotOrdinal);
+
+        this.uniformDoCulling.set(Mod.doCulling);
     }
 
     @Inject(method = "setProjectionMatrix", at = @At("TAIL"))
