@@ -9,3 +9,7 @@ accessible method net/minecraft/client/MouseHandler onMove (JDD)V
 accessible method net/minecraft/client/renderer/GameRenderer getFov (Lnet/minecraft/client/Camera;FZ)F
 
 accessible field net/caffeinemc/mods/sodium/client/render/chunk/ShaderChunkRenderer activeProgram Lnet/caffeinemc/mods/sodium/client/gl/shader/GlProgram;
+
+accessible method com/mojang/blaze3d/opengl/DirectStateAccess bindFrameBufferTextures (IIIII)V
+accessible field com/mojang/blaze3d/opengl/GlCommandEncoder readFbo I
+accessible method com/mojang/blaze3d/opengl/GlTexture createFbo (Lcom/mojang/blaze3d/opengl/DirectStateAccess;I)I

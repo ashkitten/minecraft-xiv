@@ -30,19 +30,20 @@ bool do_culling() {
     vec3 cameraToEye = u_CameraPos - u_EyePos;
     vec3 cameraToPlayer = u_CameraPos - u_PlayerPos;
     vec3 fragDist = v_FragCoord - fract(u_CameraPos);
-    vec3 blockletFragCoord =(blockDist(16, fragDist) < 64
-        ? (blockDist(32, fragDist) < 64
-            ? round((v_FragCoord + u_CameraPos) * 32) / 32
-            : round((v_FragCoord + u_CameraPos) * 16) / 16)
-        : round((v_FragCoord + u_CameraPos) * 8) / 8) - u_CameraPos;
+    vec3 blockletFragCoord = (//blockDist(16, fragDist) < 64
+//        ? (blockDist(32, fragDist) < 64
+//            ? round((v_FragCoord + u_CameraPos) * 32) / 32
+//            : round((v_FragCoord + u_CameraPos) * 16) / 16)
+//        :
+round((v_FragCoord + u_CameraPos) * 8) / 8) - u_CameraPos;
     // cone apex behind camera for near clipping
     float dist = acos(dot(normalize(blockletFragCoord + normalize(u_EyePos - u_CameraPos) * 0.5), normalize(u_EyePos - u_CameraPos)));
     float angle = min(
         acos(dot(normalize(texelToEye), normalize(cameraToEye))),
         acos(dot(normalize(texelToPlayer), normalize(cameraToPlayer)))
     );
-    float rad = 0.3 + (IGN(v_TexCoord) - 0.5) / 10;
-    float border = length(v_FragCoord) / 16;
+    float rad = 0.3 + (IGN(round(v_TexCoord)) - 0.5) / 10;
+    float border = 1;//length(v_FragCoord) / 16;
     bool center = coord.x >= border && coord.x <= 16 - border && coord.y >= border && coord.y <= 16 - border;
     if (
         // between eye and camera

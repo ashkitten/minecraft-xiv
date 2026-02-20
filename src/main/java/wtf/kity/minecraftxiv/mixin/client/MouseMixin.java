@@ -114,61 +114,6 @@ public class MouseMixin {
                 this.minecraft.player.setXRot(Mod.pitch);
 
                 Mod.crosshairTarget = null;
-            } else {
-                Vector2d res = new Vector2d(window.getWidth(), window.getHeight());
-                double aspect = res.x / res.y;
-                Vector2d coords = new Vector2d(xpos, ypos).div(res).mul(2.0).sub(new Vector2d(1.0));
-                double fov2 = Math.toRadians(renderer.getFov(camera, (float) tickDelta, true)) / 2.0;
-
-                coords.x *= aspect;
-                coords.y = -coords.y;
-                Vector2d offsets = coords.mul(Math.tan(fov2));
-                Vector3d forward = camera.rotation().transform(new Vector3d(0.0, 0.0, /*?>=1.21>>+'-'*/-1.0));
-                Vector3d right = camera.rotation().transform(new Vector3d(/*?<1.21>>+'-'*//*-*/1.0, 0.0, 0.0));
-                Vector3d up = camera.rotation().transform(new Vector3d(0.0, 1.0, 0.0));
-                Vector3d dir = forward.add(right.mul(offsets.x).add(up.mul(offsets.y))).normalize();
-                Vec3 rayDir = new Vec3(dir.x, dir.y, dir.z);
-
-                //? <1.21.11 {
-                /*Vec3 start = camera.getPosition();
-                *///? } else {
-                Vec3 start = camera.position();
-                //? }
-                Vec3 end = start.add(rayDir.scale(renderer.getDepthFar()));
-
-                // if we're elytra flying/sprint swimming, only target blocks in front of the player so we don't get caught on algae and shit
-                if (minecraft.player.isFallFlying() || minecraft.player.isSwimming()) {
-                    System.out.println("Swimming!");
-                    Vec3 eye = cameraEntity.getEyePosition((float) tickDelta);
-                    start = start.add(rayDir.scale(
-                            (start.distanceToSqr(end) + start.distanceToSqr(eye) - eye.distanceToSqr(end))
-                                    / (2 * start.distanceTo(end)) + 1
-                    ));
-                }
-
-                AABB box = cameraEntity
-                        .getBoundingBox()
-                        .expandTowards(rayDir.scale(renderer.getDepthFar()))
-                        .inflate(1.0, 1.0, 1.0);
-                HitResult hitResult = ProjectileUtil.getEntityHitResult(
-                        cameraEntity,
-                        start,
-                        end,
-                        box,
-                        entity -> !entity.isSpectator() && entity.isPickable(),
-                        renderer.getDepthFar()
-                );
-                if (hitResult == null) {
-                    hitResult = cameraEntity.level().clip(new ClipContext(
-                            start,
-                            end,
-                            ClipContext.Block.OUTLINE,
-                            ClipContext.Fluid.NONE,
-                            cameraEntity
-                    ));
-                }
-                Mod.crosshairTarget = hitResult;
-                minecraft.player.lookAt(EntityAnchorArgument.Anchor.EYES, hitResult.getLocation());
             }
         }
     }
