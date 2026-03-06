@@ -86,6 +86,8 @@ public class MouseMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;onMouse(DD)V")
     )
     private void onMouse(Tutorial instance, double x, double y) {
+        instance.onMouse(x, y);
+
         //? <1.21 {
         /*float tickDelta = minecraft.getDeltaFrameTime();
         *///? } else {
